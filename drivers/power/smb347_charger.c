@@ -1685,7 +1685,7 @@ static int __devinit smb347_probe(struct i2c_client *client,
 	mutex_init(&chip->mutex);
 
 	chip->psy_bat.name = "sec-charger",
-	chip->psy_bat.type = POWER_SUPPLY_TYPE_BATTERY,
+	chip->psy_bat.type = POWER_SUPPLY_TYPE_UNKNOWN,
 	chip->psy_bat.properties = smb347_battery_props,
 	chip->psy_bat.num_properties = ARRAY_SIZE(smb347_battery_props),
 	chip->psy_bat.get_property = smb347_chg_get_property,
@@ -1697,9 +1697,13 @@ static int __devinit smb347_probe(struct i2c_client *client,
 	}
 
 	/* Vdcin polarity setting */
-	value = smb347_read_reg(client, 0x08);
+	value = smb347_read_reg(client, SMB347_SYSOK_USB30_SELECTION);
 	value = (value | 0x1);
-	smb347_write_reg(client, 0x08, value);
+	ret =
+		smb347_write_reg(client, SMB347_SYSOK_USB30_SELECTION, value);
+	if (ret < 0) {
+		pr_err("%s: INOK polarity setting error!\n");
+	}
 
 	ret =
 	    request_threaded_irq(chip->client->irq, NULL, smb347_int_work_func,

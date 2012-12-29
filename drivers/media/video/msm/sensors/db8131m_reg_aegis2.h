@@ -721,6 +721,8 @@ static const u16 db8131m_common[] = {
 0xFFd1,
 0x0700,
 0x0b00,
+0xFF82, /* Frame Page*/
+0x7F55, /* 5 Frame setting*/
 0xFFC0,
 0x1041,
 
@@ -1451,7 +1453,8 @@ static const u32 db8131m_vt_common[] = {
 0x6401, /*gPR_Active_VGA_u8SCLCropEndY_Addr0*/
 0x65F0, /*gPR_Active_VGA_u8SCLCropEndY_Addr1*/
 
-
+0xFF82, /* Frame Page*/
+0x7F55, /* 5 Frame setting*/
 
 0xFFC0, /*Page mode*/
 0x1041,

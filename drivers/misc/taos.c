@@ -67,8 +67,10 @@
 #define VENDOR_NAME	"TAOS"
 #ifdef CONFIG_OPTICAL_TAOS_TMD2672X
 #define CHIP_NAME       "TMD2672X"
+#define CHIP_ID			0x3B
 #else
 #define CHIP_NAME       "TMD27723"
+#define CHIP_ID			0x39
 #endif
 
 #define OFFSET_FILE_PATH	"/efs/prox_cal"
@@ -412,7 +414,7 @@ static int taos_get_lux(struct taos_data *taos)
 	int coef_b = taos->pdata->coef_b;
 	int coef_c = taos->pdata->coef_c;
 	int coef_d = taos->pdata->coef_d;
-	int min_max = NULL;
+	int min_max = 0;
 
 	if (taos->pdata->min_max)
 		min_max = taos->pdata->min_max;
@@ -431,7 +433,7 @@ static int taos_get_lux(struct taos_data *taos)
 	lux1 = (int)((coef_a * cleardata - coef_b * irdata) / CPL);
 	lux2 = (int)((coef_c * cleardata - coef_d * irdata) / CPL);
 
-	if (min_max == NULL) {
+	if (min_max == 0) {
 		if (lux1 > lux2)
 			calculated_lux = lux1;
 		else if (lux2 >= lux1)
@@ -1441,7 +1443,7 @@ static int taos_get_initial_offset(struct taos_data *taos)
 
 	msleep(20);
 	ret = opt_i2c_read(taos, PRX_OFFSET, &p_offset);
-	pr_err("%s: initial offset = %d\n", p_offset);
+	pr_err("%s: initial offset = %d\n", __func__, p_offset);
 
 	if (taos->pdata->power)
 		taos->pdata->power(false);
@@ -1453,6 +1455,7 @@ static int taos_i2c_probe(struct i2c_client *client,
 			  const struct i2c_device_id *id)
 {
 	int ret = -ENODEV;
+	u16 chipid = 0;
 	struct input_dev *input_dev;
 	struct taos_data *taos;
 	struct taos_platform_data *pdata = client->dev.platform_data;
@@ -1472,6 +1475,11 @@ static int taos_i2c_probe(struct i2c_client *client,
 		pr_err("%s: failed to alloc memory for module data\n",
 		       __func__);
 		return -ENOMEM;
+	}
+	chipid = i2c_smbus_read_word_data(client, CMD_REG | CHIPID);
+	if (chipid != CHIP_ID) {
+		pr_err("%s: i2c read error [%X]\n", __func__, chipid);
+		goto err_chip_id_or_i2c_error;
 	}
 
 	taos->offset_cal_high = false;
@@ -1640,6 +1648,7 @@ err_input_allocate_device_proximity:
 	gpio_free(taos->pdata->als_int);
 	mutex_destroy(&taos->power_lock);
 	wake_lock_destroy(&taos->prx_wake_lock);
+err_chip_id_or_i2c_error:
 	kfree(taos);
 done:
 	return ret;

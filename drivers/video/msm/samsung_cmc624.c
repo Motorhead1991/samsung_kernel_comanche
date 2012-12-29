@@ -1777,6 +1777,11 @@ bool samsung_has_cmc624(void)
 		return false;
 	else
 		return true;
+#elif defined(CONFIG_MACH_KONA)
+	if(system_rev == 0)
+		return false;
+	else 
+		return true;
 #else
 	return false;
 #endif

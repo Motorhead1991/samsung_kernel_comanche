@@ -116,7 +116,7 @@ struct mxt_info {
 #define SYSFS					1
 #define FOR_BRINGUP				1
 #define UPDATE_ON_PROBE				1
-#define READ_FW_FROM_HEADER			1
+#define READ_FW_FROM_HEADER			0
 #define FOR_DEBUGGING_TEST_DOWNLOADFW_BIN	0
 #define ITDEV					1
 #define SHOW_COORDINATE				0
@@ -139,7 +139,6 @@ struct mxt_info {
 /* Firmware */
 #if READ_FW_FROM_HEADER
 static u8 firmware_mXT[] = {
-#include "mXT224S__APP_v1_1_AA_.h"
 };
 #endif
 
@@ -1068,6 +1067,9 @@ static void mxt_ta_probe(int ta_status)
 		write_config(copy_data,
 				copy_data->t62_config_chrg_e[0],
 				copy_data->t62_config_chrg_e + 1);
+		write_config(copy_data,
+				copy_data->t46_config_chrg_e[0],
+				copy_data->t46_config_chrg_e + 1);
 #ifdef CONFIG_READ_FROM_FILE
 		mxt_download_config(data, MXT_TA_CFG_NAME);
 #endif
@@ -1078,6 +1080,9 @@ static void mxt_ta_probe(int ta_status)
 		write_config(copy_data,
 				copy_data->t62_config_batt_e[0],
 				copy_data->t62_config_batt_e + 1);
+		write_config(copy_data,
+				copy_data->t46_config_batt_e[0],
+				copy_data->t46_config_batt_e + 1);
 #ifdef CONFIG_READ_FROM_FILE
 		mxt_download_config(data, MXT_BATT_CFG_NAME);
 #endif
@@ -1414,8 +1419,9 @@ static void mxt_tch_atch_area_check(struct mxt_data *data,
 		} else {
 			calibrate_chip_e();
 			pr_info("[TSP] Abnormal Status\n");
+			return;
 		}
-		return;
+
 	}
 
 
@@ -1696,16 +1702,24 @@ static irqreturn_t mxt_irq_thread(int irq, void *ptr)
 					data->pdata->check_calgood = 0;
 
 				if (data->pdata->check_antitouch) {
-					pr_info("[TSP]SPT_TIMER_T61 Stop\n");
-					data->pdata->check_antitouch = 0;
-					data->pdata->check_timer = 0;
-					mxt_t8_cal_set(data, 0);
-					data->pdata->check_calgood = 1;
-					data->coin_check = 0;
-					mxt_t61_timer_set(data,
-							MXT_T61_TIMER_ONESHOT,
-							MXT_T61_TIMER_CMD_START,
-							10000);
+					if (data->pdata->check_autocal == 1) {
+						pr_info("[TSP]Auto cal is on going - 4sec time restart\n");
+						mxt_t61_timer_set(data,
+								MXT_T61_TIMER_ONESHOT,
+								MXT_T61_TIMER_CMD_START,
+								4000);
+					} else {
+						pr_info("[TSP]SPT_TIMER_T61 Stop\n");
+						data->pdata->check_antitouch = 0;
+						data->pdata->check_timer = 0;
+						mxt_t8_cal_set(data, 0);
+						data->pdata->check_calgood = 1;
+						data->coin_check = 0;
+						mxt_t61_timer_set(data,
+								MXT_T61_TIMER_ONESHOT,
+								MXT_T61_TIMER_CMD_START,
+								10000);
+					}
 				}
 			}
 		}
@@ -2440,15 +2454,6 @@ static int mxt_load_fw(struct device *dev, const char *fn)
 	int check_frame_crc_error = 0;
 	int check_wating_frame_data_error = 0;
 
-#if READ_FW_FROM_HEADER
-	struct firmware *fw = NULL;
-
-	pr_info("mxt_load_fw start from header!!!\n");
-	fw = kzalloc(sizeof(struct firmware), GFP_KERNEL);
-
-	fw->data = firmware_mXT;
-	fw->size = sizeof(firmware_mXT);
-#else
 	const struct firmware *fw = NULL;
 
 	pr_info("mxt_load_fw startl!!!\n");
@@ -2457,7 +2462,6 @@ static int mxt_load_fw(struct device *dev, const char *fn)
 		pr_err("Unable to open firmware %s\n", fn);
 		return ret;
 	}
-#endif
 	/* Change to the bootloader mode */
 	object_register = 0;
 	value = (u8)MXT_BOOT_VALUE;
@@ -2533,11 +2537,7 @@ static int mxt_load_fw(struct device *dev, const char *fn)
 	}
 
 out:
-#if READ_FW_FROM_HEADER
-	kfree(fw);
-#else
 	release_firmware(fw);
-#endif
 	/* Change to slave address of application */
 	if (client->addr == MXT_BOOT_LOW)
 		client->addr = MXT_APP_LOW;
@@ -2556,14 +2556,6 @@ static int mxt_load_fw_bootmode(struct device *dev, const char *fn)
 	int check_frame_crc_error = 0;
 	int check_wating_frame_data_error = 0;
 
-#if READ_FW_FROM_HEADER
-	struct firmware *fw = NULL;
-	pr_info("mxt_load_fw start from header!!!\n");
-	fw = kzalloc(sizeof(struct firmware), GFP_KERNEL);
-
-	fw->data = firmware_mXT;
-	fw->size = sizeof(firmware_mXT);
-#else
 	const struct firmware *fw = NULL;
 	pr_info("mxt_load_fw start!!!\n");
 
@@ -2572,7 +2564,6 @@ static int mxt_load_fw_bootmode(struct device *dev, const char *fn)
 		pr_err("Unable to open firmware %s\n", fn);
 		return ret;
 	}
-#endif
 	/* Unlock bootloader */
 	mxt_unlock_bootloader(client);
 
@@ -2624,11 +2615,7 @@ static int mxt_load_fw_bootmode(struct device *dev, const char *fn)
 	}
 
 out:
-#if READ_FW_FROM_HEADER
-	kfree(fw);
-#else
 	release_firmware(fw);
-#endif
 	/* Change to slave address of application */
 	if (client->addr == MXT_BOOT_LOW)
 		client->addr = MXT_APP_LOW;
@@ -3743,7 +3730,7 @@ static int __devinit mxt_probe(struct i2c_client *client,
 #endif
 #if UPDATE_ON_PROBE
 #if !(FOR_DEBUGGING_TEST_DOWNLOADFW_BIN)
-		if (data->tsp_version < firmware_latest[0]
+		if (data->tsp_version != firmware_latest[0]
 			|| (data->tsp_version == firmware_latest[0]
 				&& data->tsp_build != firmware_latest[1])) {
 			pr_info("force firmware update\n");

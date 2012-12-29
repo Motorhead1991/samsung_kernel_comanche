@@ -106,7 +106,11 @@ static struct gpiomux_setting cam_settings[] = {
 	},
 	{
 		.func = GPIOMUX_FUNC_1, /* drive strength for D2*/
+#if defined(CONFIG_MACH_M2_VZW)
+		.drv = GPIOMUX_DRV_2MA,
+#else
 		.drv = GPIOMUX_DRV_4MA,
+#endif
 		.pull = GPIOMUX_PULL_NONE,
 	},
 	{
@@ -157,6 +161,15 @@ static struct msm_gpiomux_config msm8960_cam_common_configs[] = {
 #if !defined(CONFIG_MACH_STRETTO)
 	{
 		.gpio = GPIO_MSM_FLASH_CNTL_EN,
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &cam_settings[2],
+			[GPIOMUX_SUSPENDED] = &cam_settings[0],
+		},
+	},
+#endif
+#if defined(CONFIG_MACH_INFINITE)/* >=REV04 */
+	{
+		.gpio = GPIO_MSM_FLASH_CNTL_EN2,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &cam_settings[2],
 			[GPIOMUX_SUSPENDED] = &cam_settings[0],
@@ -218,7 +231,7 @@ static struct msm_gpiomux_config msm8960_cam_common_configs[] = {
 			[GPIOMUX_SUSPENDED] = &cam_settings[0],
 		},
 	},
-#if defined(CONFIG_MACH_STRETTO)
+#if defined(CONFIG_MACH_STRETTO) || defined(CONFIG_MACH_INFINITE)
 	{
 		.gpio = GPIO_CAM_MCLK2,
 		.settings = {
@@ -565,6 +578,8 @@ static struct msm_camera_device_platform_data msm_camera_csi_device_data[] = {
 };
 
 static struct camera_vreg_t msm_8960_back_cam_vreg[] = {
+	{"cam_vdig", REG_LDO, 1200000, 1200000, 105000},
+	{"cam_vio", REG_VS, 0, 0, 0},
 	{"cam_vana", REG_LDO, 2800000, 2850000, 85600},
 	{"cam_vio", REG_VS, 0, 0, 0},
 	{"cam_vdig", REG_LDO, 1200000, 1200000, 105000},
@@ -572,6 +587,7 @@ static struct camera_vreg_t msm_8960_back_cam_vreg[] = {
 };
 
 static struct camera_vreg_t msm_8960_front_cam_vreg[] = {
+	{"cam_vio", REG_VS, 0, 0, 0},
 	{"cam_vana", REG_LDO, 2800000, 2850000, 85600},
 	{"cam_vio", REG_VS, 0, 0, 0},
 	{"cam_vdig", REG_LDO, 1200000, 1200000, 105000},
@@ -630,7 +646,7 @@ static struct msm_camera_gpio_conf msm_8960_back_cam_gpio_conf = {
 };
 #endif
 
-static struct regulator *l11, *l12, *l18, *l29, *l28, *isp_core;
+static struct regulator *l8,*l11, *l12,*l16, *l18, *l29,*l30, *l28, *isp_core;
 /* CAM power
 	CAM_SENSOR_A_2.8		:  GPIO_CAM_A_EN(GPIO 46)
 	CAM_SENSOR_IO_1.8		: VREG_L29		: l29
@@ -659,6 +675,12 @@ static void cam_ldo_power_on(int mode)
 	ret = regulator_enable(l29);
 	if (ret)
 		cam_err("error enabling regulator 8921_lvs5\n");
+static struct camera_vreg_t msm_8960_mt9m114_vreg[] = {
+	{"cam_vio", REG_VS, 0, 0, 0},
+	{"cam_vdig", REG_LDO, 1200000, 1200000, 105000},
+	{"cam_vana", REG_LDO, 2800000, 2850000, 85600},
+	{"cam_vaf", REG_LDO, 2800000, 2800000, 300000},
+};
 
 /*Sensor AVDD 2.8V - CAM_SENSOR_A2P8 */
 	gpio_set_value_cansleep(GPIO_CAM_A_EN, 1);
@@ -702,6 +724,12 @@ static void cam_ldo_power_off(int mode)
 				cam_err("error disabling regulator\n");
 		}
 	}
+static struct camera_vreg_t msm_8960_s5k3l1yx_vreg[] = {
+	{"cam_vdig", REG_LDO, 1200000, 1200000, 105000},
+	{"cam_vana", REG_LDO, 2800000, 2850000, 85600},
+	{"cam_vio", REG_VS, 0, 0, 0},
+	{"cam_vaf", REG_LDO, 2800000, 2800000, 300000},
+};
 
 /*VT core 1.5 - CAM_DVDD_1P2V*/
 	if (l18) {
@@ -784,12 +812,12 @@ static void cam_ldo_power_off(int mode)
 	gpio_set_value_cansleep(GPIO_CAM_CORE_EN, 0);
 
 }
-#elif defined(CONFIG_ISX012) && defined(CONFIG_SR030PC50) /* ApexQ*/
+#elif defined(CONFIG_ISX012) && defined(CONFIG_SR030PC50) /* KonaLTE*/
 static void cam_ldo_power_on(int mode)
 	{
 		int ret = 0;
 
-	printk(KERN_DEBUG "[%s : %d] %s CAMERA POWER ON!!\n",
+	printk(KERN_DEBUG "[%s : %d] %s KONA CAMERA POWER ON!!\n",
 			   __func__, __LINE__, mode ? "FRONT" : "REAR");
 
 /*5M Core 1.2V - CAM_ISP_CORE_1P2*/
@@ -802,70 +830,80 @@ static void cam_ldo_power_on(int mode)
 	ret = regulator_enable(l29);
 	if (ret)
 		cam_err("error enabling regulator 8921_lvs5\n");
+	
+	printk(KERN_DEBUG "check CAM_SENSOR_IO_1P8 : %d\n", ret);
 
 /*Sensor AVDD 2.8V - CAM_SENSOR_A2P8 */
-	gpio_set_value_cansleep(GPIO_CAM_A_EN, 1);
-	ret = gpio_get_value(GPIO_CAM_A_EN);
-	printk(KERN_DEBUG "check GPIO_CAM_A_EN : %d\n", ret);
-
-/*VT core 1.2V - CAM_DVDD_1P2V*/
-	l18 = regulator_get(NULL, "cam_vio");
-	ret = regulator_set_voltage(l18, 1800000, 1800000);
+	l16 = regulator_get(NULL, "8921_l16");
+	ret = regulator_set_voltage(l16, 2800000, 2800000);
 	if (ret)
 		cam_err("error setting voltage\n");
-	ret = regulator_enable(l18);
+	ret = regulator_enable(l16);
 	if (ret)
 		cam_err("error enabling regulator\n");
+
+/*VT core 1.5V - CAM_DVDD_1P5V*/
+	l30 = regulator_get(NULL, "8921_lvs6");
+	ret = regulator_enable(l30);
+	if (ret)
+		cam_err("error enabling regulator 8921_lv6\n");
 	usleep(20);
 
+#if 1
 /*Sensor AF 2.8V -CAM_AF_2P8  */
 	if (!mode) {
-		l11 = regulator_get(NULL, "8921_l11");
-		ret = regulator_set_voltage(l11, 2800000, 2800000);
+		l8 = regulator_get(NULL, "8921_l8");
+		ret = regulator_set_voltage(l8, 2800000, 2800000);
 		if (ret)
 			cam_err("error setting voltage\n");
-		ret = regulator_enable(l11);
+		ret = regulator_enable(l8);
 		if (ret)
 			cam_err("error enabling regulator\n");
 	}
-	}
+	printk(KERN_DEBUG "check CAM_AF_2P8 : %d\n", ret);
+#endif	
+}
 
 static void cam_ldo_power_off(int mode)
 {
 	int ret = 0;
 
-	printk(KERN_DEBUG "[%s : %d] %s CAMERA POWER OFF!!\n",
+	printk(KERN_DEBUG "[%s : %d] %s KONA CAMERA POWER OFF!!\n",
 		   __func__, __LINE__, mode ? "FRONT" : "REAR");
-
+#if 1
 /*Sensor AF 2.8V -CAM_AF_2P8  */
 	if (!mode) {
-		if (l11) {
-			ret = regulator_disable(l11);
+		if (l8) {
+			ret = regulator_disable(l8);
 			if (ret)
 				cam_err("error disabling regulator\n");
 		}
 	}
-
-/*VT core 1.2 - CAM_DVDD_1P2V*/
-	if (l18) {
-		ret = regulator_disable(l18);
+#endif
+/*VT core 1.5 - CAM_DVDD_1P5V*/
+	if (l30) {
+		ret = regulator_disable(l30);
 		if (ret)
-			cam_err("error disabling regulator\n");
+			cam_err(" l30 error disabling regulator\n");
 	}
 
 /*Sensor AVDD 2.8V - CAM_SENSOR_A2P8 */
-	gpio_set_value_cansleep(GPIO_CAM_A_EN, 0);
-
+	if (l16) {
+		ret = regulator_disable(l16);
+		if (ret)
+			cam_err(" l16 error disabling regulator\n");
+	}
 
 /*Sensor IO 1.8V -CAM_SENSOR_IO_1P8  */
 	if (l29) {
 		ret = regulator_disable(l29);
 		if (ret)
-			cam_err("error disabling regulator\n");
+			cam_err(" l29 error disabling regulator\n");
 	}
 
 /*5M Core 1.2V - CAM_ISP_CORE_1P2*/
 	gpio_set_value_cansleep(GPIO_CAM_CORE_EN, 0);
+    printk(KERN_DEBUG "OFF CAM_CORE_EN \n");
 
 }
 #elif defined(CONFIG_ISX012) && defined(CONFIG_S5K8AAY) /* JAGUAR */
@@ -1145,11 +1183,13 @@ static void cam_ldo_power_on(int mode)
 		printk(KERN_DEBUG "check FLASH_LED_UNLOCK : %d\n", ret);
 	}
 #else
-	gpio_set_value_cansleep(PM8921_MPP_PM_TO_SYS
-		(PMIC_MPP_FLASH_LED_UNLOCK), 1);
-	ret = gpio_get_value_cansleep(PM8921_MPP_PM_TO_SYS
-		(PMIC_MPP_FLASH_LED_UNLOCK));
-	printk(KERN_DEBUG "check FLASH_LED_UNLOCK : %d\n", ret);
+	if (!mode && torchonoff == 0) {
+		gpio_set_value_cansleep(PM8921_MPP_PM_TO_SYS
+			(PMIC_MPP_FLASH_LED_UNLOCK), 1);
+		ret = gpio_get_value_cansleep(PM8921_MPP_PM_TO_SYS
+			(PMIC_MPP_FLASH_LED_UNLOCK));
+		printk(KERN_DEBUG "check FLASH_LED_UNLOCK : %d\n", ret);
+	}
 #endif
 
 /*5M Core 1.2V - CAM_ISP_CORE_1P2*/
@@ -1207,8 +1247,10 @@ static void cam_ldo_power_off(int mode)
 			(PMIC_MPP_FLASH_LED_UNLOCK), 0);
 	}
 #else
-	gpio_set_value_cansleep(PM8921_MPP_PM_TO_SYS
-		(PMIC_MPP_FLASH_LED_UNLOCK), 0);
+	if (!mode && torchonoff == 0) {
+		gpio_set_value_cansleep(PM8921_MPP_PM_TO_SYS
+			(PMIC_MPP_FLASH_LED_UNLOCK), 0);
+	}
 #endif
 
 /*Sensor AF 2.8V -CAM_AF_2P8  */
@@ -2228,7 +2270,11 @@ struct platform_device msm8960_camera_sensor_s5k6a3yx = {
 
 #ifdef CONFIG_ISX012
 static struct msm_camera_sensor_flash_data flash_isx012 = {
-	.flash_type	= MSM_CAMERA_FLASH_LED,
+#if defined(CONFIG_MACH_KONA)
+	.flash_type	= MSM_CAMERA_FLASH_NONE,
+#else
+	.flash_type = MSM_CAMERA_FLASH_LED,
+#endif
 };
 
 static struct msm_camera_sensor_platform_info sensor_board_info_isx012 = {
@@ -2379,7 +2425,8 @@ static struct msm_camera_sensor_platform_info sensor_board_info_sr030pc50 = {
 				|| defined(CONFIG_MACH_ESPRESSO10_VZW) \
 				|| defined(CONFIG_MACH_ESPRESSO10_SPR) \
 				|| defined(CONFIG_MACH_ESPRESSO10_ATT) \
-				|| defined(CONFIG_MACH_ESPRESSO_SPR)
+				|| defined(CONFIG_MACH_ESPRESSO_SPR) \
+				|| defined(CONFIG_MACH_KONA)
 	.mount_angle	= 0,
 #else
 	.mount_angle	= 270,
@@ -2609,7 +2656,11 @@ static ssize_t front_camera_type_show(struct device *dev,
 #elif defined(CONFIG_S5K6A3YX)
 	char cam_type[] = "SLSI_S5K6A3YX\n";
 #elif defined(CONFIG_DB8131M)
+#if defined(CONFIG_MACH_INFINITE)
+	char cam_type[] = "DB8131A\n";
+#else
 	char cam_type[] = "DUB_DB8131M\n";
+#endif
 #elif defined(CONFIG_SR030PC50)
 	char cam_type[] = "SILICON_SR030PC50\n";
 #else
@@ -2650,7 +2701,11 @@ static ssize_t front_camera_firmware_show(struct device *dev,
 #elif defined(CONFIG_S5K6A3YX)
 	char *cam_fw[] = {"S5K6A3", "S5K6A3"}; /*char cam_fw[] = "S5K6A3YX\n";*/
 #elif defined(CONFIG_DB8131M)
+#if defined(CONFIG_MACH_INFINITE)
+	char cam_fw[] = "DB8131A\n";
+#else
 	char cam_fw[] = "DB8131M\n";
+#endif
 #elif defined(CONFIG_SR030PC50)
 	char cam_fw[] = "SR030PC50\n";
 #else
@@ -2801,6 +2856,9 @@ static ssize_t cameraflash_file_cmd_store(struct device *dev,
 		torchonoff = 0;
 	} else {
 		pr_err("[Torch flash]ON\n");
+#if defined(CONFIG_MACH_INFINITE)
+		mdelay(5);
+#endif
 		gpio_set_value_cansleep(gpio_flash_en, 0);
 
 		for (i = 5; i > 1; i--) {
@@ -2957,6 +3015,8 @@ static int get_mclk_rev(void)
 	return ((system_rev >= BOARD_REV07) ? 1 : 0);
 #elif defined(CONFIG_MACH_JASPER)
 	return ((system_rev >= BOARD_REV08) ? 1 : 0);
+#elif defined(CONFIG_MACH_INFINITE)
+	return ((system_rev >= BOARD_REV04) ? 1 : 0);
 #elif defined(CONFIG_MACH_STRETTO)
 	return 1;
 #elif defined(CONFIG_MACH_SUPERIORLTE_SKT)
@@ -3102,6 +3162,15 @@ void __init msm8960_init_cam(void)
 	gpio_tlmm_config(GPIO_CFG(GPIO_MSM_FLASH_NOW, 0, GPIO_CFG_OUTPUT,
 		GPIO_CFG_PULL_DOWN, GPIO_CFG_16MA), GPIO_CFG_ENABLE);
 #endif
+
+#if defined(CONFIG_MACH_INFINITE)
+	if (system_rev >= BOARD_REV04) {
+		gpio_tlmm_config(GPIO_CFG(GPIO_MSM_FLASH_CNTL_EN2, 0,
+		GPIO_CFG_OUTPUT, GPIO_CFG_PULL_DOWN, GPIO_CFG_16MA),
+		GPIO_CFG_ENABLE);
+	}
+#endif
+
 #endif
 
 	/*CAM_MCLK0*/
@@ -3173,9 +3242,19 @@ void __init msm8960_init_cam(void)
 			s_info->sensor_platform_info->flash_en =
 				pmic_gpio_msm_flash_cntl_en;
 		}
+#elif defined(CONFIG_MACH_INFINITE)
+		s_info->sensor_platform_info->flash_set =
+			GPIO_MSM_FLASH_NOW;
+		if (system_rev >= BOARD_REV04) {
+			s_info->sensor_platform_info->flash_en =
+				GPIO_MSM_FLASH_CNTL_EN2;
+		} else {
+			s_info->sensor_platform_info->flash_en =
+				GPIO_MSM_FLASH_CNTL_EN;
+		}
 #endif
 	}
-#if defined(CONFIG_MACH_GOGH) || defined(CONFIG_MACH_INFINITE)
+#if defined(CONFIG_MACH_GOGH)
 	else {
 		if (system_rev <= BOARD_REV02) {
 			s_info->sensor_platform_info->flash_en =
@@ -3199,7 +3278,7 @@ void __init msm8960_init_cam(void)
 
 #if defined(CONFIG_MACH_APEXQ) || defined(CONFIG_MACH_COMANCHE) \
 	|| defined(CONFIG_MACH_EXPRESS) || defined(CONFIG_MACH_AEGIS2) \
-	|| defined(CONFIG_MACH_JASPER)
+	|| defined(CONFIG_MACH_JASPER) || defined(CONFIG_MACH_INFINITE)
 	if (rev) {
 		s_info->sensor_platform_info->mclk =
 			GPIO_CAM_MCLK2;

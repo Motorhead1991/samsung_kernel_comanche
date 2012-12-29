@@ -199,7 +199,7 @@ static bool fw_updater(struct ts_data *ts, char *mode)
 			return false;
 		}
 
-		if (strcmp(FW_KERNEL_VERSION, FW_IC_VERSION) > 0) {
+		if (strcmp(FW_KERNEL_VERSION, FW_IC_VERSION) != 0) {
 			pr_info("tsp: fw_updater: FW upgrade enter.\n");
 			ret = fw_update_internal(ts->client);
 		} else
@@ -1008,6 +1008,9 @@ static irqreturn_t ts_irq_handler(int irq, void *handle)
 			x = (point[0] << 4) + (point[2] & 0x0F);
 			y = (point[1] << 4) + ((point[2] & 0xF0) >> 4);
 
+			swap(x, y);
+			y = ts->platform_data->y_pixel_size - y;
+
 			if (cur_state == 0 && ts->finger_state[id] == 1) {
 #if TRACKING_COORD
 				pr_info("tsp: finger %d up (%d, %d, %d)\n",
@@ -1102,9 +1105,9 @@ static int __devinit ts_probe(struct i2c_client *client,
 	ts->platform_data->set_ta_mode = set_ta_mode;
 	ts->platform_data->link = ts;
 
-	if (ts->platform_data->panel_name && system_rev >= 7)
+/*	if (ts->platform_data->panel_name && system_rev >= 7)
 		pr_info("tsp: ts_probe: attached panel: %s",
-						ts->platform_data->panel_name);
+				ts->platform_data->panel_name);*/
 
 	ts->input_dev = input_allocate_device();
 	if (!ts->input_dev) {
@@ -1144,6 +1147,7 @@ static int __devinit ts_probe(struct i2c_client *client,
 	/* Check the new fw. and update */
 	set_fw_version(FW_KERNEL_VERSION, FW_DATE);
 	fw_updater(ts, "normal");
+	reset_tsp(ts);
 
 	if (ts->client->irq) {
 #if DEBUG_PRINT

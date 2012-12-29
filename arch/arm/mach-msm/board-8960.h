@@ -55,6 +55,7 @@ extern void __init mms_tsp_input_init(void);
 				|| defined(CONFIG_MACH_ESPRESSO10_SPR) \
 				|| defined(CONFIG_MACH_ESPRESSO10_VZW) \
 				|| defined(CONFIG_MACH_ESPRESSO10_ATT) \
+				|| defined(CONFIG_MACH_KONA) \
 				|| defined(CONFIG_MACH_ESPRESSO_SPR)
 extern void __init usb_switch_init(void);
 #endif
@@ -91,9 +92,14 @@ enum {
 
 #endif
 
+#ifdef CONFIG_WACOM_W9001
+void __init input_wacom_init(void);
+#endif
+
 extern int samsung_cmc624_on(int enable);
 extern int samsung_has_cmc624(void);
 extern int gpio_rev(unsigned int);
+extern void msm_otg_set_cable_state(int);
 extern void msm_otg_set_vbus_state(int);
 extern void msm_otg_set_charging_state(bool enable);
 extern void msm_otg_set_id_state(bool enable);
@@ -111,6 +117,7 @@ void msm8960_init_fb(void);
 void msm8960_init_pmic(void);
 void msm8960_init_mmc(void);
 int msm8960_init_gpiomux(void);
+unsigned char msm8960_hdmi_as_primary_selected(void);
 void msm8960_allocate_fb_region(void);
 void msm8960_set_display_params(char *prim_panel, char *ext_panel);
 void msm8960_pm8921_gpio_mpp_init(void);

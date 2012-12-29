@@ -347,6 +347,10 @@ static struct mms_ts_platform_data mms_ts_pdata = {
 	.gpio_scl	= GPIO_TOUCH_SCL,
 	.gpio_sda	= GPIO_TOUCH_SDA,
 	.check_module_type = false,
+#if defined(CONFIG_MACH_ESPRESSO_VZW)
+	.invert_y	= true,
+	.flip_xy	= true,
+#endif
 };
 
 static struct i2c_board_info __initdata mms_i2c3_boardinfo_final[] = {

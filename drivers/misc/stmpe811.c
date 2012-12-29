@@ -96,6 +96,12 @@ s32 stmpe811_adc_get_value(u8 channel)
 	return w_data;
 }
 
+#if	defined(CONFIG_MACH_KONA)
+#define	ADC_DATA_CH	0
+#else
+#define	ADC_DATA_CH	7
+#endif
+
 static ssize_t adc_test_show(struct device *dev,
 		struct device_attribute *attr,
 		char *buf)
@@ -105,13 +111,13 @@ static ssize_t adc_test_show(struct device *dev,
 	struct i2c_client *client = adc_data->client;
 	s32 ret;
 
-	ret = stmpe811_adc_get_value(7);
+	ret = stmpe811_adc_get_value(ADC_DATA_CH);
 	if (ret < 0) {
 		dev_err(&client->dev,
 			"%s: err at read adc %d\n", __func__, ret);
 		return snprintf(buf, 9, "UNKNOWN\n");
 	}
-	printk(KERN_INFO "%s: accessory adc[ch7]: %x\n", __func__, ret);
+	printk(KERN_INFO "%s: accessory adc[ch%d]: %x\n", __func__, ADC_DATA_CH, ret);
 
 	if (ret > 0xe38 && ret < 0xed8)
 		return snprintf(buf, 3, "1c\n");

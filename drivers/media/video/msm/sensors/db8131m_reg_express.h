@@ -671,7 +671,7 @@ static const u16 db8131m_common[] = {
 0x5402, /* MIPI PHY_HS_TX_CTRL*/
 0x3805, /* MIPI DPHY_CTRL_SET*/
 0x3C81,
-0x5011,
+0x5011, /* MIPI Current 01 -> 11 */
 0x5880,
 0x5900,
 
@@ -774,7 +774,6 @@ static const u16 db8131m_common[] = {
 
 0xFF82, /* Frame Page*/
 0x7F55, /* 5 Frame setting*/
-
 0xFFC0, /*Page mode*/
 0x1041,
 0xE764, /*Wait  100*/
@@ -1749,7 +1748,6 @@ static const u16 db8131m_common_A[] = {
 0xFFC0, /*Page mode*/
 0x1041,
 0xE764, /*Wait  100*/
-
 
 /* Self-Cam END of Initial*/
 };

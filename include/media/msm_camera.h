@@ -353,6 +353,7 @@ struct msm_isp_event_ctrl {
 		struct msm_cam_evt_divert_frame div_frame;
 		struct msm_mctl_pp_event_info pp_event_info;
 	} isp_data;
+	uint32_t evt_id;
 };
 
 #define MSM_CAM_RESP_CTRL              0
@@ -666,6 +667,8 @@ struct msm_stats_buf {
 	uint32_t status_bits;
 	unsigned long buffer;
 	int fd;
+	int length;
+	struct ion_handle *handle;
 	uint32_t frame_id;
 };
 #define MSM_V4L2_EXT_CAPTURE_MODE_DEFAULT 0
@@ -836,7 +839,8 @@ struct msm_snapshot_pp_status {
 #define CAMERA_EFFECT_POINT_COLOR_2	16
 #define CAMERA_EFFECT_POINT_COLOR_3	17
 #define CAMERA_EFFECT_POINT_COLOR_4	18
-#define CAMERA_EFFECT_MAX		19
+#define CAMERA_EFFECT_CARTOONIZE        19
+#define CAMERA_EFFECT_MAX		20
 
 #define CAMERA_WHITE_BALANCE_AUTO				1
 #define CAMERA_WHITE_BALANCE_INCANDESCENT		3
@@ -934,6 +938,8 @@ struct msm_snapshot_pp_status {
 #define EXT_CAM_ANTI_BANDING		43
 #define EXT_CAM_SAMSUNG_CAMERA		44
 #define EXT_CAM_SET_FLIP		45
+#define EXT_CAM_SET_LOW_LIGHT_MODE	46
+#define EXT_CAM_SET_LOW_LIGHT_SIZE	47
 
 /* QRD */
 #define CAMERA_EFFECT_BW		10

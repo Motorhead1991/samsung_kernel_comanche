@@ -48,7 +48,7 @@ struct sec_jack_buttons_zone {
 
 struct sec_jack_platform_data {
 #if defined(CONFIG_SAMSUNG_JACK_GNDLDET)
-	int	(*get_l_jack_state) (void);
+	int	(*get_gnd_jack_state) (void);
 #endif
 	int	(*get_det_jack_state) (void);
 	int	(*get_send_key_state) (void);

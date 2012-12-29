@@ -704,10 +704,8 @@ static const u16 db8131m_common[] = {
 0xFFd1,
 0x0700,
 0x0b00,
-
 0xFF82, /* Frame Page*/
 0x7F55, /* 5 Frame setting*/
-
 0xFFC0,
 0x1041,
 

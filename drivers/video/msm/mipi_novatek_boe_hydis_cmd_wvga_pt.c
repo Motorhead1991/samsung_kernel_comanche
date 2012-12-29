@@ -658,8 +658,10 @@ static struct dsi_cmd_desc novatek_panel_ready_to_on_cmds_nt_boe[] = {
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(pwm_cond_set_2_0), pwm_cond_set_2_0},
 
+#if !defined(CONFIG_FB_MSM_MIPI_CMD_PANEL_VSYNC)
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(display_on), display_on},
+#endif
 };
 
 static struct dsi_cmd_desc novatek_panel_ready_to_on_cmds_nt_hydis[] = {
@@ -743,16 +745,17 @@ static struct dsi_cmd_desc novatek_panel_ready_to_on_cmds_nt_hydis[] = {
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 			sizeof(pwm_cond_set_2_0), pwm_cond_set_2_0},
 
-
+#if !defined(CONFIG_FB_MSM_MIPI_CMD_PANEL_VSYNC)
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(display_on), display_on},
+#endif
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(pwm_cond_set_1_0), pwm_cond_set_1_0},
 };
 
 static int get_candela_index(int bl_level)
 {
-	if (mipi_pd.manufacture_id == JASPER_MANUFACTURE_ID)
+	if (mipi_pd.manufacture_id ==JASPER_MANUFACTURE_ID_HYDIS)
 		return get_candela_index_hydis(bl_level);
 	else
 		return get_candela_index_boe(bl_level);
@@ -850,7 +853,7 @@ static int __init mipi_cmd_novatek_wvga_pt_init(void)
 	pinfo.mipi.wr_mem_continue = 0x3c;
 	pinfo.mipi.wr_mem_start = 0x2c;
 	pinfo.mipi.dsi_phy_db = &dsi_cmd_mode_phy_db;
-
+	pinfo.mipi.esc_byte_ratio = 4;
 
 	ret = mipi_novatek_disp_device_register(&pinfo, MIPI_DSI_PRIM,
 						MIPI_DSI_PANEL_WVGA_PT,

@@ -88,7 +88,7 @@ static char panel_cond_set[] = {
 };
 #endif
 /* FOR 4.8 inch */
-#ifdef CONFIG_MACH_M2_VZW
+#ifdef CONFIG_MIPI_CLK_487
 static char panel_cond_set_4_8[] = {
 	0xF8,
 	0x19, 0x33, 0x00, 0x00, 0x00,
@@ -841,8 +841,8 @@ static struct dsi_cmd_desc_LCD lcd_acl_table[] = {
 
 static struct dsi_cmd_desc_LCD lcd_acl_table_4_8[] = {
 	{0, "20", NULL},
-	{0, "30", NULL},
-	{0, "40", NULL},
+	{33, "30", &DSI_CMD_ACL_33},
+	{40, "40", &DSI_CMD_ACL_40},
 	{40, "50", &DSI_CMD_ACL_40},
 	{40, "60", &DSI_CMD_ACL_40},
 	{40, "70", &DSI_CMD_ACL_40},
@@ -868,7 +868,7 @@ static struct dsi_cmd_desc_LCD lcd_acl_table_4_8[] = {
 	{40, "270", &DSI_CMD_ACL_40},
 	{40, "280", &DSI_CMD_ACL_40},
 	{40, "290", &DSI_CMD_ACL_40},
-	{50, "300", &DSI_CMD_ACL_50},
+	{40, "300", &DSI_CMD_ACL_40},
 };
 
 
@@ -1591,14 +1591,6 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	pinfo.mode2_xres = 0;
 	pinfo.mode2_yres = 0;
 	pinfo.mode2_bpp = 0;
-	/*
-	 *
-	 * Panel's Horizontal input timing requirement is to
-	 * include dummy(pad) data of 200 clk in addition to
-	 * width and porch/sync width values
-	 */
-	pinfo.mipi.xres_pad = 0;
-	pinfo.mipi.yres_pad = 0;
 
 	pinfo.type = MIPI_VIDEO_PANEL;
 	pinfo.pdest = DISPLAY_1;
@@ -1623,7 +1615,7 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 		pinfo.lcdc.v_front_porch = 53;
 	pinfo.lcdc.v_pulse_width = 1;
 	pinfo.lcdc.border_clr = 0;	/* blk */
-	pinfo.lcdc.underflow_clr = 0x0;	/* blue */
+	pinfo.lcdc.underflow_clr = 0x0;	/* blue => black */
 	pinfo.lcdc.hsync_skew = 0;
 	pinfo.bl_max = 255;
 	pinfo.bl_min = 1;
@@ -1632,9 +1624,9 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	if (samsung_has_cmc624())
 		pinfo.clk_rate = 483000000;
 	else
-#ifdef CONFIG_MACH_M2_SPR
+#ifdef CONFIG_MIPI_CLK_500
 		pinfo.clk_rate = 500000000;
-#elif defined(CONFIG_MACH_M2_VZW)
+#elif defined(CONFIG_MIPI_CLK_487)
 		pinfo.clk_rate = 487000000;
 #else
 		pinfo.clk_rate = 499500000;
@@ -1671,6 +1663,7 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
+	pinfo.mipi.esc_byte_ratio = 4;
 
 	/*
 	*	To support NONE CMC & HAS CMC

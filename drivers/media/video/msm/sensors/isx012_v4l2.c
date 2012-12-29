@@ -42,6 +42,8 @@
 #include "isx012_regs_express.h"
 #elif defined(CONFIG_MACH_STRETTO)
 #include "isx012_regs_stretto.h"
+#elif defined(CONFIG_MACH_KONA)
+#include "isx012_regs_kona.h"
 #else
 #include "isx012_regs_v2.h"
 #endif
@@ -1573,6 +1575,8 @@ static void isx012_set_af_mode(int mode)
 
 static int isx012_set_af_stop(int af_check)
 {
+	short unsigned int r_data[1] = {0};
+
 	CAM_DEBUG(" %d", af_check);
 
 	if (af_check == 1) {
@@ -1595,6 +1599,12 @@ static int isx012_set_af_stop(int af_check)
 			isx012_i2c_write_multi(0x0282, 0x20, 0x01);
 		}
 		isx012_i2c_write_multi(0x8800, 0x01, 0x01);
+	} else {
+		isx012_i2c_read(0x0308, r_data);
+
+		 /* 0x11: Normal preview AE, 0x12: Flash AE */
+		if ((r_data[0] & 0xFF) != 0x11)
+			ISX012_BURST_WRITE_LIST(isx012_Flash_OFF);
 	}
 
 	isx012_set_af_mode(isx012_ctrl->settings.focus_mode);
@@ -3079,7 +3089,7 @@ static int isx012_sensor_power_down(struct msm_sensor_ctrl_t *s_ctrl)
 
 	return rc;
 }
-#elif defined(CONFIG_ISX012) && defined(CONFIG_SR030PC50) /* ApexQ*/
+#elif defined(CONFIG_ISX012) && defined(CONFIG_SR030PC50) /* KonaLTE*/
 static int isx012_sensor_power_down(struct msm_sensor_ctrl_t *s_ctrl)
 {
 	int rc = 0;
@@ -3088,7 +3098,10 @@ static int isx012_sensor_power_down(struct msm_sensor_ctrl_t *s_ctrl)
 
 	CAM_DEBUG(" E");
 
+#if !(defined(CONFIG_MACH_KONA))
+	CAM_DEBUG(" not KONA flash off ");
 	isx012_set_flash(FLASH_OFF);
+#endif
 
 	/*Soft landing */
 	ISX012_WRITE_LIST(isx012_Sensor_Off_VCM);

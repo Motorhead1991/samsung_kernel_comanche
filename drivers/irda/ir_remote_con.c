@@ -213,11 +213,10 @@ static void ir_remocon_work(struct ir_remocon_data *ir_data, int count)
 	struct i2c_client *client = data->client;
 
 	int buf_size = count+2;
-	int ret, i;
+	int ret;
 	int sleep_timing;
 	int end_data;
 	int emission_time;
-	unsigned long flags;
 
 	printk(KERN_INFO "%s: total buf_size: %d\n", __func__, buf_size);
 

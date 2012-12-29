@@ -224,6 +224,20 @@ config SEC_DEBUG_LOW_LOG
 	 The file I/O is added in kernel driver level
 	 so that kernel messages are logged on next reboot.
 
+config SEC_DEBUG_DOUBLE_FREE
+	bool "Enable double free detection"
+	default n
+	help
+	 Detect a erraneous codes that frees a kmalloced node
+	 twice. When kfree(p) is called, p is not freed right away.
+	 Instead, it is pushed into a circular buffer. What it frees
+	 is the oldest pointer that was pushed into the buffer.
+	 If someone tries to free the same pointer p, *p
+	 is read and checks for magic codes that is written
+	 when it was first freed. If it matches, the whole
+	 circular buffer is searched. Panic will happend when
+	 a match is found.
+
 config PID_IN_CONTEXTIDR
 	bool "Write the current PID to the CONTEXTIDR register"
 	depends on CPU_COPY_V6

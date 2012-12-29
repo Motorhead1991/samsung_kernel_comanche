@@ -273,6 +273,7 @@ static char acl_off[] = {
 	0x00, 0x00, 0x00, 0x00,
 };
 
+
 static char elvss_cond_set[] = {
 	0xB2,
 	0x10, 0x10, 0x10, 0x10
@@ -372,13 +373,12 @@ static struct dsi_cmd_desc samsung_display_on_cmds[] = {
 		sizeof(gamma_set_update), gamma_set_update},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(etc_cond_set1), etc_cond_set1},
-
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
-		sizeof(acl_on), acl_off},
+		sizeof(acl_off), acl_off},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(acl_on), acl_on},
 
-	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,		
 		sizeof(etc_cond_set2), etc_cond_set2},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(etc_cond_set3), etc_cond_set3},
@@ -666,10 +666,10 @@ static int get_candela_index(int bl_level)
 		backlightlevel = GAMMA_250CD; /* 22 */
 		break;
 	case 255:
-		if (mipi_pd.msd->dstat.auto_brightness == 1)
-			backlightlevel = GAMMA_300CD; /* 23 */
-		else
+		if (mipi_pd.msd->dstat.auto_brightness == 0)
 			backlightlevel = GAMMA_250CD; /* 22 */
+		else
+			backlightlevel = GAMMA_300CD; /* 23 */
 		break;
 	default:
 		backlightlevel = GAMMA_40CD; /* 1 */
@@ -895,7 +895,6 @@ static int prepare_brightness_control_cmd_array(int lcd_type, int bl_level)
 		combined_ctrl[cmd_size].dlen = sizeof(acl_off);
 		cmd_size++;
 	}
-
 	if (cmds_send_flag & 0x8) { /* acl update */
 
 		combined_ctrl[cmd_size].payload =
@@ -1054,8 +1053,8 @@ static int __init mipi_video_samsung_oled_wvga_pt_init(void)
 	 * include dummy(pad) data of 200 clk in addition to
 	 * width and porch/sync width values
 	 */
-	pinfo.mipi.xres_pad = 0;
-	pinfo.mipi.yres_pad = 2;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 2;
 
 	pinfo.type = MIPI_VIDEO_PANEL;
 	pinfo.pdest = DISPLAY_1;
@@ -1081,7 +1080,7 @@ static int __init mipi_video_samsung_oled_wvga_pt_init(void)
 	pinfo.clk_rate = 343500000;
 	pinfo.mipi.mode = DSI_VIDEO_MODE;
 
-	pinfo.mipi.pulse_mode_hsa_he = TRUE;
+	pinfo.mipi.pulse_mode_hsa_he = FALSE;
 	pinfo.mipi.hfp_power_stop = FALSE;
 	pinfo.mipi.hbp_power_stop = FALSE;
 	pinfo.mipi.hsa_power_stop = FALSE;
@@ -1102,6 +1101,7 @@ static int __init mipi_video_samsung_oled_wvga_pt_init(void)
 	pinfo.mipi.dma_trigger = DSI_CMD_TRIGGER_SW;
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
+	pinfo.mipi.esc_byte_ratio = 1;
 
 
 	ret = mipi_samsung_device_register(&pinfo, MIPI_DSI_PRIM,

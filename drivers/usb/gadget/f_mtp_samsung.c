@@ -93,12 +93,12 @@
 #endif
 /*-------------------------------------------------------------------------*/
 
-#define MTPG_BULK_BUFFER_SIZE	32768
+#define MTPG_BULK_BUFFER_SIZE	4096
 #define MTPG_INTR_BUFFER_SIZE	28
 
 /* number of rx and tx requests to allocate */
-#define MTPG_RX_REQ_MAX				8
-#define MTPG_MTPG_TX_REQ_MAX		8
+#define MTPG_RX_REQ_MAX				4
+#define MTPG_MTPG_TX_REQ_MAX		4
 #define MTPG_INTR_REQ_MAX	5
 
 /* ID for Microsoft MTP OS String */
@@ -1291,7 +1291,6 @@ mtpg_function_bind(struct usb_configuration *c, struct usb_function *f)
 				fs_mtpg_out_desc.bEndpointAddress;
 		int_hs_notify_desc.bEndpointAddress =
 				int_fs_notify_desc.bEndpointAddress;
-
 	}
 
 	mtpg->cdev = cdev;

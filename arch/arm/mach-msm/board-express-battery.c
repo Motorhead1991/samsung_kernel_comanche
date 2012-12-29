@@ -197,8 +197,8 @@ static void sec_bat_initial_check(void)
 }
 
 static bool sec_bat_check_jig_status(void) {return false; }
-static void sec_bat_switch_to_check(void) {}
-static void sec_bat_switch_to_normal(void) {}
+static bool sec_bat_switch_to_check(void) {return true; }
+static bool sec_bat_switch_to_normal(void) {return true; }
 
 static int current_cable_type = POWER_SUPPLY_TYPE_BATTERY;
 static int sec_bat_check_cable_callback(void)
@@ -215,7 +215,7 @@ static int sec_bat_check_cable_callback(void)
 	 * Add msleep to fix the this issue.
 	 */
 	msleep(500);
-
+	
 	if (current_cable_type ==
 		POWER_SUPPLY_TYPE_BATTERY &&
 		gpio_get_value_cansleep(
@@ -383,13 +383,14 @@ static sec_bat_adc_region_t cable_adc_value_table[] = {
 static sec_charging_current_t charging_current_table[] = {
 	{0,	0,	0,	0},
 	{0,	0,	0,	0},
+	{0,	0,	0,	0},
 	{1000,	1050,	200,	0},
 	{1000,	500,	200,	0},
 	{1000,	500,	200,	0},
 	{1000,	500,	200,	0},
 	{1000,	500,	200,	0},
 	{1000,	700,	200,	0},
-	{1000,	1050,	200,	0},
+	{0,	0,	0,	0},
 	{1000,	1050,	200,	0},
 	{0,	0,	0,	0},
 	{1000,	-500,	0,	0},

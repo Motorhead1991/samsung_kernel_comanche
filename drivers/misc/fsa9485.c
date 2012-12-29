@@ -1158,6 +1158,9 @@ static int __devinit fsa9485_probe(struct i2c_client *client,
 	if (ret) {
 		dev_err(&client->dev,
 			"input_register_device %s: err %d\n", __func__, ret);
+		input_free_device(input);
+		kfree(usbsw);
+		return ret;
 	}
 
 	usbsw->client = client;
@@ -1240,6 +1243,7 @@ fail2:
 	if (client->irq)
 		free_irq(client->irq, usbsw);
 fail1:
+	input_unregister_device(input);
 	mutex_destroy(&usbsw->mutex);
 	i2c_set_clientdata(client, NULL);
 	kfree(usbsw);

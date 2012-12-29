@@ -345,7 +345,7 @@ static struct msm_gpiomux_config msm8960_sec_ts_configs[] = {
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
 #define MSM_ION_QSECOM_SIZE	0x600000 /* (6MB) */
 #define MSM_ION_MFC_SIZE	SZ_8K
-#define MSM_ION_AUDIO_SIZE	0x1000 /* 4KB */
+#define MSM_ION_AUDIO_SIZE	MSM_PMEM_AUDIO_SIZE /* 4KB */
 #define MSM_ION_HEAP_NUM	8
 #define MSM_LIQUID_ION_MM_SIZE (MSM_ION_MM_SIZE + 0x600000)
 #define MSM_LIQUID_ION_SF_SIZE MSM_LIQUID_PMEM_SIZE
@@ -2375,6 +2375,9 @@ static void opt_init(void)
 		gpio_direction_input(prox_int);
 		gpio_free(prox_int);
 	}
+#if defined(CONFIG_OPTICAL_GP2AP020A00F)
+		opt_gp2a_data.version = 1;
+#endif
 }
 #endif
 

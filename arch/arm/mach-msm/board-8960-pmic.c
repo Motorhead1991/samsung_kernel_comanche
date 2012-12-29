@@ -101,7 +101,9 @@ static struct pm8xxx_gpio_init pm8921_gpios[] __initdata = {
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
 	PM8XXX_GPIO_OUTPUT_FUNC(25, 0, PM_GPIO_FUNC_2), /* LED_BACKLIGHT_PWM */
 #endif /* CONFIG_MACH_ESPRESSO_VZW/ATT */
-
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+	PM8XXX_GPIO_OUTPUT_FUNC(25, 0, PM_GPIO_FUNC_2), /* LED_BACKLIGHT_PWM */
+#endif
 	PM8XXX_GPIO_INPUT(26,	    PM_GPIO_PULL_NO), /* SD_CARD_DET_N */
 #if defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
@@ -583,46 +585,46 @@ static struct led_platform_data pm8921_led_core_pdata = {
 };
 
 
-static int pm8921_led0_pat1_red_pwm_duty_pcts[] = {
+int pm8921_led0_pat1_red_pwm_duty_pcts[] = {
 	100, 100
 };
-static int pm8921_led0_pat1_green_pwm_duty_pcts[] = {
+int pm8921_led0_pat1_green_pwm_duty_pcts[] = {
 	0, 0
 };
 
-static int pm8921_led0_pat2_red_pwm_duty_pcts[] = {
+int pm8921_led0_pat2_red_pwm_duty_pcts[] = {
 	0, 100
 };
-static int pm8921_led0_pat2_green_pwm_duty_pcts[] = {
+int pm8921_led0_pat2_green_pwm_duty_pcts[] = {
 	0, 0
 };
 
-static int pm8921_led0_pat3_red_pwm_duty_pcts[] = {
+int pm8921_led0_pat3_red_pwm_duty_pcts[] = {
 	0, 0
 };
 
-static int pm8921_led0_pat3_green_pwm_duty_pcts[] = {
+int pm8921_led0_pat3_green_pwm_duty_pcts[] = {
 	0, 0
 };
 
-static int pm8921_led0_pat3_blue_pwm_duty_pcts[] = {
+int pm8921_led0_pat3_blue_pwm_duty_pcts[] = {
 	0, 100
 };
 
-static int pm8921_led0_pat4_red_pwm_duty_pcts[] = {
+int pm8921_led0_pat4_red_pwm_duty_pcts[] = {
 	0, 100
 };
-static int pm8921_led0_pat4_green_pwm_duty_pcts[] = {
+int pm8921_led0_pat4_green_pwm_duty_pcts[] = {
 	0, 0
 };
 
-static int pm8921_led0_pat5_red_pwm_duty_pcts[] = {
+int pm8921_led0_pat5_red_pwm_duty_pcts[] = {
 	0, 0
 };
-static int pm8921_led0_pat5_green_pwm_duty_pcts[] = {
+int pm8921_led0_pat5_green_pwm_duty_pcts[] = {
 	100, 100
 };
-static int pm8921_led0_pat5_blue_pwm_duty_pcts[] = {
+int pm8921_led0_pat5_blue_pwm_duty_pcts[] = {
 	0, 0
 };
 

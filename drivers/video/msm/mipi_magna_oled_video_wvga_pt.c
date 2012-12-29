@@ -227,6 +227,8 @@ static struct dsi_cmd_desc samsung_panel_late_on_cmds[] = {
 };
 
 static struct dsi_cmd_desc samsung_panel_early_off_cmds[] = {
+	{DTYPE_DCS_LWRITE, 1, 0, 0, 10,
+		sizeof(sleep_in), sleep_in},
 	{DTYPE_DCS_LWRITE, 1, 0, 0, 0,
 		sizeof(all_pixel_off), all_pixel_off},
 };
@@ -418,7 +420,7 @@ static int get_candela_index(int bl_level)
 		break;
 	case 90 ... 99:
 		backlightlevel = GAMMA_90CD; /* 6 */
-		break;		
+		break;
 	case 100 ... 109:
 		backlightlevel = GAMMA_100CD; /* 7 */
 		break;
@@ -456,11 +458,11 @@ static int get_candela_index(int bl_level)
 		backlightlevel = GAMMA_210CD; /* 18 */
 		break;
 	case 220 ... 229:
-		backlightlevel = GAMMA_220CD; /* 19 */
+		backlightlevel = GAMMA_220CD; /* 10 */
 		break;
 	case 230 ... 239:
 		backlightlevel = GAMMA_230CD; /* 20 */
-		break;		
+		break;
 	case 240 ... 249:
 		backlightlevel = GAMMA_240CD; /* 21 */
 		break;
@@ -468,10 +470,10 @@ static int get_candela_index(int bl_level)
 		backlightlevel = GAMMA_250CD; /* 22 */
 		break;
 	case 255:
-		if (mipi_pd.msd->dstat.auto_brightness == 1)
-			backlightlevel = GAMMA_300CD; /* 23 */
-		else
+		if (mipi_pd.msd->dstat.auto_brightness == 0)
 			backlightlevel = GAMMA_250CD; /* 22 */
+		else
+			backlightlevel = GAMMA_300CD; /* 23 */
 		break;
 	default:
 		backlightlevel = GAMMA_40CD; /* 1 */
@@ -544,7 +546,7 @@ static int set_gamma_level(int bl_level, enum gamma_mode_list gamma_mode)
 
 	cd = get_candela_index(bl_level);
 	if (mipi_pd.lcd_current_cd_idx == cd)
-		return -1;
+		return -EPERM;
 	else
 	    mipi_pd.lcd_current_cd_idx = cd;
 
@@ -642,11 +644,11 @@ static struct mipi_dsi_phy_ctrl dsi_video_mode_phy_db = {
 	0x00, 0x14, 0x03, 0x00, 0x02, 0x00, 0x20, 0x00, 0x01 },
 };
 
-static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
+static int __init mipi_video_magna_oled_wvga_pt_init(void)
 {
 	int ret;
 #ifdef CONFIG_FB_MSM_MIPI_PANEL_DETECT
-	if (msm_fb_detect_client("mipi_cmd_samsung_oled_qhd"))
+	if (msm_fb_detect_client("mipi_video_magna_oled_wvga"))
 		return 0;
 #endif
 	pinfo.xres = 480;
@@ -662,7 +664,7 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	pinfo.lcdc.h_back_porch = 16;
 	pinfo.lcdc.h_front_porch = 16;
 	pinfo.lcdc.v_pulse_width = 2;
-	pinfo.lcdc.v_back_porch = 1;
+	pinfo.lcdc.v_back_porch = 4;
 	pinfo.lcdc.v_front_porch = 105;
 	pinfo.lcdc.border_clr = 0;	/* blk */
 	pinfo.lcdc.underflow_clr = 0xff;/* blue */
@@ -693,6 +695,7 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 	pinfo.mipi.frame_rate = 60;
 	pinfo.mipi.force_clk_lane_hs = 1;
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
+	pinfo.mipi.esc_byte_ratio = 3;
 	ret = mipi_samsung_device_register(&pinfo, MIPI_DSI_PRIM,
 				MIPI_DSI_PANEL_WVGA_PT,
 				&mipi_pd);
@@ -701,4 +704,4 @@ static int __init mipi_cmd_samsung_oled_qhd_pt_init(void)
 
 	return ret;
 }
-module_init(mipi_cmd_samsung_oled_qhd_pt_init);
+module_init(mipi_video_magna_oled_wvga_pt_init);

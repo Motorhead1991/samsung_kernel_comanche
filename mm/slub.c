@@ -30,7 +30,9 @@
 #include <linux/stacktrace.h>
 
 #include <trace/events/kmem.h>
-
+#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
+#include <mach/sec_debug.h>
+#endif
 /*
  * Lock order:
  *   1. slab_lock(page)
@@ -1883,6 +1885,11 @@ static void *__slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
 	if (unlikely(!node_match(c, node)))
 		goto another_slab;
 
+	/* must check again c->freelist in case of cpu migration or IRQ */
+	object = c->freelist;
+	if (object)
+		goto update_freelist;
+
 	stat(s, ALLOC_REFILL);
 
 load_freelist:
@@ -1892,6 +1899,7 @@ load_freelist:
 	if (kmem_cache_debug(s))
 		goto debug;
 
+update_freelist:
 	c->freelist = get_freepointer(s, object);
 	page->inuse = page->objects;
 	page->freelist = NULL;
@@ -2998,6 +3006,11 @@ void kfree(const void *x)
 	struct page *page;
 	void *object = (void *)x;
 
+#ifdef CONFIG_SEC_DEBUG_DOUBLE_FREE
+	object = x = kfree_hook(x, __builtin_return_address(0));
+	if (!x)
+		return;
+#endif
 	trace_kfree(_RET_IP_, x);
 
 	if (unlikely(ZERO_OR_NULL_PTR(x)))
@@ -3498,13 +3511,14 @@ struct kmem_cache *kmem_cache_create(const char *name, size_t size,
 		if (kmem_cache_open(s, n,
 				size, align, flags, ctor)) {
 			list_add(&s->list, &slab_caches);
+			up_write(&slub_lock);
 			if (sysfs_slab_add(s)) {
+				down_write(&slub_lock);
 				list_del(&s->list);
 				kfree(n);
 				kfree(s);
 				goto err;
 			}
-			up_write(&slub_lock);
 			return s;
 		}
 		kfree(n);

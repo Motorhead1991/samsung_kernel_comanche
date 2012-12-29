@@ -581,11 +581,6 @@ static int msm_rpmrs_flush_buffer(
 	}
 
 	rc = msm_rpm_set_noirq(MSM_RPM_CTX_SET_SLEEP, req, count);
-	if (req == &msm_rpmrs_buffered[0]) {
-		rc = -ENOMEM;
-		goto flush_buffer_restore;
-	}
-
 	kfree(req);
 
 	if (rc)

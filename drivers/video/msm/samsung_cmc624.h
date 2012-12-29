@@ -17,8 +17,11 @@
 */
 
 #include "cmc624.h"
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+#include "samsung_cmc624_tune_konalte.h"
+#else
 #include "samsung_cmc624_tune.h"
-
+#endif
 #define CMC624_INITSEQ cmc624_init
 /*#define CMC624_INITSEQ cmc624_bypass*/
 #define CMC624_MAX_SETTINGS	 100

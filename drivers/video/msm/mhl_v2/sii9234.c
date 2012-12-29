@@ -399,7 +399,7 @@ static int mhl_wake_toggle(struct sii9234_data *sii9234,
 	if (ret < 0)
 		return ret;
 
-	mdelay(high_period);
+	usleep_range(high_period * USEC_PER_MSEC, high_period * USEC_PER_MSEC);
 
 	ret = mhl_tx_clear_reg(sii9234, MHL_TX_DISC_CTRL7_REG, (1<<7) | (1<<6));
 	if (ret < 0)

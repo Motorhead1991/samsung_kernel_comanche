@@ -17,12 +17,16 @@
 #include <linux/bootmem.h>
 #include <asm/mach-types.h>
 #include <mach/msm_bus_board.h>
+#include <mach/msm_memtypes.h>
 #include <mach/board.h>
 #include <mach/gpio.h>
 #include <mach/gpiomux.h>
 #include <mach/msm8960-gpio.h>
 #include <linux/ion.h>
 #include <mach/ion.h>
+
+#include <mach/socinfo.h>
+
 #include "devices.h"
 #include "board-8960.h"
 #include <linux/i2c.h>
@@ -30,8 +34,10 @@
 #include "devices-msm8x60.h"
 
 #ifdef CONFIG_SAMSUNG_CMC624
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 /*1.8V*/
 #define MLCD_ON		PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_MLCD_ON)
+#endif
 /*CMC_DCDC_EN (1.1V)*/
 #define IMA_PWR_EN	PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_IMA_PWR_EN)
 /*FAIL_SAFEB*/
@@ -59,14 +65,14 @@ static struct gpiomux_setting cmc624_suspend_cfg = {
 
 static struct msm_gpiomux_config msm8x60_cmc624_configs[] __initdata = {
 	{
-		.gpio      = 71,
+		.gpio      = GPIO_IMA_I2C_SDA,
 		.settings = {
 			[GPIOMUX_ACTIVE]	= &cmc624_active_cfg,
 			[GPIOMUX_SUSPENDED] = &cmc624_suspend_cfg,
 		},
 	},
 	{
-		.gpio      = 72,
+		.gpio      = GPIO_IMA_I2C_SCL,
 		.settings = {
 			[GPIOMUX_ACTIVE]	= &cmc624_active_cfg,
 			[GPIOMUX_SUSPENDED] = &cmc624_suspend_cfg,
@@ -122,6 +128,8 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 #define MSM_FB_PRIM_BUF_SIZE (544 * 960 * 4 * 3)
 #elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT_PANEL)
 #define MSM_FB_PRIM_BUF_SIZE (1280 * 736 * 4 * 3)
+#elif defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+#define MSM_FB_PRIM_BUF_SIZE (1280 * 800 * 4 * 3)
 #else
 #define MSM_FB_PRIM_BUF_SIZE (480 * 800 * 4 * 3)
 #endif
@@ -137,6 +145,8 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 #define MSM_FB_PRIM_BUF_SIZE (544 * 960 * 4 * 2)
 #elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT_PANEL)
 #define MSM_FB_PRIM_BUF_SIZE (1280 * 736 * 4 * 2)
+#elif defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+#define MSM_FB_PRIM_BUF_SIZE (1280 * 800 * 4 * 2)
 #else
 #define MSM_FB_PRIM_BUF_SIZE (480 * 800 * 4 * 2)
 #endif
@@ -163,29 +173,8 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 #define MIPI_DSI_WRITEBACK_SIZE 0
 #endif
 
-#if defined(CONFIG_FB_MSM_HDMI_MSM_PANEL)
-/* hdmi = 1920 x 1088 x 2(bpp) x 1(page) */
-#define MSM_FB_EXT_BUF_SIZE 0x3FC000
-#elif defined(CONFIG_FB_MSM_TVOUT)
-/* tvout = 720 x 576 x 2(bpp) x 2(pages) */
-#define MSM_FB_EXT_BUF_SIZE 0x195000
-#else /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
-#define MSM_FB_EXT_BUF_SIZE 0
-#endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
-
-#ifdef CONFIG_FB_MSM_WRITEBACK_MSM_PANEL
-/* width x height x 3 bpp x 2 frame buffer */
-#define MSM_FB_WRITEBACK_SIZE 0x3FC000
-#define MSM_FB_WRITEBACK_OFFSET  \
-		(MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE)
-#else
-#define MSM_FB_WRITEBACK_SIZE   0
-#define MSM_FB_WRITEBACK_OFFSET 0
-#endif
-
 /* Note: must be multiple of 4096 */
-#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE + \
-				MSM_FB_WRITEBACK_SIZE, 4096)
+#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE, 4096)
 
 #ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL)
@@ -213,24 +202,33 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 
 #define MDP_VSYNC_GPIO 0
 
+#define MIPI_VIDEO_NOVATEK_WXGA_PANEL_NAME "mipi_novatek_tft_video_wxga"
 #define MIPI_CMD_NOVATEK_QHD_PANEL_NAME	"mipi_cmd_novatek_qhd"
 #define MIPI_CMD_NOVATEK_WVGA_PANEL_NAME	"mipi_cmd_novatek_wvga"
 #define MIPI_VIDEO_NOVATEK_QHD_PANEL_NAME	"mipi_video_novatek_qhd"
 #define MIPI_VIDEO_TOSHIBA_WSVGA_PANEL_NAME	"mipi_video_toshiba_wsvga"
 #define MIPI_VIDEO_TOSHIBA_WUXGA_PANEL_NAME	"mipi_video_toshiba_wuxga"
 #define MIPI_VIDEO_CHIMEI_WXGA_PANEL_NAME	"mipi_video_chimei_wxga"
+#define MIPI_VIDEO_CHIMEI_WUXGA_PANEL_NAME	"mipi_video_chimei_wuxga"
 #define MIPI_VIDEO_BOEOT_WSVGA_PANEL_NAME	"mipi_video_boeot_tft_wsvga"
 #define MIPI_VIDEO_SAMSUNG_WXGA_PANEL_NAME	"mipi_video_samsung_tft_wxga"
 #define MIPI_VIDEO_SIMULATOR_VGA_PANEL_NAME	"mipi_video_simulator_vga"
 #define MIPI_CMD_RENESAS_FWVGA_PANEL_NAME	"mipi_cmd_renesas_fwvga"
+#define MIPI_VIDEO_ORISE_720P_PANEL_NAME	"mipi_video_orise_720p"
+#define MIPI_CMD_ORISE_720P_PANEL_NAME		"mipi_cmd_orise_720p"
 #define HDMI_PANEL_NAME	"hdmi_msm"
 #define TVOUT_PANEL_NAME	"tvout_msm"
 
 #ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
-unsigned char hdmi_is_primary = 1;
+ unsigned char hdmi_is_primary = 1;
 #else
-unsigned char hdmi_is_primary;
+ unsigned char hdmi_is_primary;
 #endif
+
+unsigned char msm8960_hdmi_as_primary_selected(void)
+{
+	return hdmi_is_primary;
+}
 
 static struct resource msm_fb_resources[] = {
 	{
@@ -238,9 +236,7 @@ static struct resource msm_fb_resources[] = {
 	}
 };
 
-#ifndef CONFIG_FB_MSM_MIPI_PANEL_DETECT
 static void set_mdp_clocks_for_wuxga(void);
-#endif
 
 static int msm_fb_detect_panel(const char *name)
 {
@@ -252,6 +248,7 @@ static int msm_fb_detect_panel(const char *name)
 				strnlen(MIPI_VIDEO_CHIMEI_WXGA_PANEL_NAME,
 					PANEL_NAME_MAX_LEN)))
 			return 0;
+		
 		if (!strncmp(name, MIPI_VIDEO_BOEOT_WSVGA_PANEL_NAME,
 				strnlen(MIPI_VIDEO_BOEOT_WSVGA_PANEL_NAME,
 					PANEL_NAME_MAX_LEN)))
@@ -278,6 +275,12 @@ static int msm_fb_detect_panel(const char *name)
 					PANEL_NAME_MAX_LEN)))
 			return 0;
 
+		if (!strncmp(name, MIPI_VIDEO_NOVATEK_WXGA_PANEL_NAME,
+			strnlen(MIPI_VIDEO_NOVATEK_WXGA_PANEL_NAME,
+				PANEL_NAME_MAX_LEN)))
+			return 0;
+
+
 		if (!strncmp(name, MIPI_CMD_NOVATEK_WVGA_PANEL_NAME,
 				strnlen(MIPI_CMD_NOVATEK_WVGA_PANEL_NAME,
 					PANEL_NAME_MAX_LEN)))
@@ -299,13 +302,26 @@ static int msm_fb_detect_panel(const char *name)
 			set_mdp_clocks_for_wuxga();
 			return 0;
 		}
+
+		if (!strncmp(name, MIPI_VIDEO_ORISE_720P_PANEL_NAME,
+				strnlen(MIPI_VIDEO_ORISE_720P_PANEL_NAME,
+					PANEL_NAME_MAX_LEN)))
+			return 0;
+
+		if (!strncmp(name, MIPI_CMD_ORISE_720P_PANEL_NAME,
+				strnlen(MIPI_CMD_ORISE_720P_PANEL_NAME,
+					PANEL_NAME_MAX_LEN)))
+			return 0;
 #endif
 	}
 
 	if (!strncmp(name, HDMI_PANEL_NAME,
 			strnlen(HDMI_PANEL_NAME,
-				PANEL_NAME_MAX_LEN)))
+				PANEL_NAME_MAX_LEN))) {
+		if (hdmi_is_primary)
+			set_mdp_clocks_for_wuxga();
 		return 0;
+	}
 
 	if (!strncmp(name, TVOUT_PANEL_NAME,
 			strnlen(TVOUT_PANEL_NAME,
@@ -375,7 +391,8 @@ static void mipi_dsi_panel_pwm_cfg(void)
 static bool dsi_power_on;
 
 #if defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
-	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
+	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 /*
  * Macros to be used in espresso panel power function for
  * controlling regulators.
@@ -416,6 +433,8 @@ static bool dsi_power_on;
  *
  * @return int
  */
+#if defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
+	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
 static int mipi_dsi_espresso_dsi_power(int on)
 {
 	static struct regulator *vreg_l2_1p2;
@@ -441,7 +460,10 @@ static int mipi_dsi_espresso_dsi_power(int on)
 	}
 	return 0;
 }
+#endif
 
+#if !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+#ifdef CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11
 static int mipi_dsi_tc35reset_release(void)
 {
 	/* Perform LVDS_RST */
@@ -558,10 +580,14 @@ static int mipi_dsi_espresso_panel_power(int on)
 	}
 	return 0;
 }
+#endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
+#endif
 
 #undef LVDS_REGULATOR_TUNE
+/*
 #undef LVDS_REGULATOR_ENABLE
 #undef LVDS_REGULATOR_DISABLE
+*/
 #endif /* CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL */
 
 /**
@@ -737,8 +763,13 @@ void cmc_power(int on)
 			/* V_IMA_1.1V on*/
 			gpio_direction_output(IMA_PWR_EN, 1);
 			udelay(50);
+
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 			/*V_IMA_1.8V on*/
 			gpio_direction_output(MLCD_ON, 1);
+#else
+			LVDS_REGULATOR_ENABLE(RPM_VREG_ID_PM8921_LVS7, 1800000, 1800000);
+#endif
 			udelay(50);
 			gpio_direction_output(IMA_CMC_EN, 1); /*FAIL_SAFEB*/
 			udelay(50);
@@ -750,8 +781,12 @@ void cmc_power(int on)
 		      pr_info("CMC Power off ................\n");
 			/*FAILSAFE->lo*/
 			gpio_direction_output(IMA_CMC_EN, 0);
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 			/*V_IMA_1.8V off*/
 			gpio_direction_output(MLCD_ON, 0);
+#else
+			LVDS_REGULATOR_DISABLE(RPM_VREG_ID_PM8921_LVS7);
+#endif
 			/* V_IMA_1.1V off*/
 			gpio_direction_output(IMA_PWR_EN, 0);
 			/* RESETB->lo, FAILSAFE->lo, SLEEPB->lo */
@@ -766,6 +801,10 @@ void cmc_power(int on)
 		}
 }
 #endif
+
+#undef LVDS_REGULATOR_ENABLE
+#undef LVDS_REGULATOR_DISABLE
+
 #if defined(CONFIG_MIPI_SAMSUNG_ESD_REFRESH)
 #if defined(CONFIG_SAMSUNG_CMC624)
 void set_esd_gpio_config(void)
@@ -854,13 +893,14 @@ static int  mipi_pmic_gpios_pmconfig(int state)
 	struct pm_gpio param = {
 		.disable_pin = state,
 	};
-
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 	ret = pm8xxx_gpio_config(MLCD_ON, &param);
 	if (ret) {
 		pr_err("%s: Failed to configure gpio %d\n", __func__,
 			MLCD_ON);
 		return ret;
 	}
+#endif	
 	ret = pm8xxx_gpio_config(IMA_PWR_EN, &param);
 	if (ret) {
 		pr_err("%s: Failed to configure gpio %d\n", __func__,
@@ -889,6 +929,234 @@ static int  mipi_pmic_gpios_pmconfig(int state)
 }
 #endif
 
+#ifdef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
+#define LCD_EN 79
+#define MSM_GPIO_BL_I2C_SDA 40
+#define MSM_GPIO_BL_I2C_SCL 41
+#define PMIC_GPIO_LCD_RESET 43
+static int mipi_dsi_cdp_panel_power_kona(int on)
+{ 
+	static struct regulator  *reg_l2;
+	static int gpio43;
+	int rc=0;
+	struct pm_gpio gpio43_param = {
+		.direction = PM_GPIO_DIR_OUT,
+		.output_buffer = PM_GPIO_OUT_BUF_CMOS,
+		.output_value = 0,
+		.pull = PM_GPIO_PULL_NO,
+		.vin_sel = 2,
+		.out_strength = PM_GPIO_STRENGTH_HIGH,
+		.function = PM_GPIO_FUNC_NORMAL,
+		.inv_int_pol = 0,
+		.disable_pin = 0,
+	};
+
+	pr_debug("%s called",__func__);
+	gpio43 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LCD_RESET);
+	if (!dsi_power_on) {
+		reg_l2 = regulator_get(&msm_mipi_dsi1_device.dev,
+				"dsi_vdda");
+		if (IS_ERR(reg_l2)) {
+			pr_err("could not get 8921_l2, rc = %ld\n",
+				PTR_ERR(reg_l2));
+			return -ENODEV;
+		}
+		
+		rc = regulator_set_voltage(reg_l2, 1200000, 1200000);
+		if (rc) {
+			pr_err("set_voltage l2 failed, rc=%d\n", rc);
+			return -EINVAL;
+		}
+		rc = regulator_set_optimum_mode(reg_l2, 100000);
+		if (rc < 0) {
+			pr_err("set_optimum_mode l2 failed, rc=%d\n", rc);
+			return -EINVAL;
+		}
+		rc = regulator_enable(reg_l2);
+		if (rc) {
+			pr_err("enable l2 failed, rc=%d\n", rc);
+			return -ENODEV;
+		}
+		rc = gpio_request(gpio43, "disp_rst_n");
+		if (rc) {
+			pr_err("request gpio 43 failed, rc=%d\n", rc);
+			return -ENODEV;
+		}
+
+		rc = pm8xxx_gpio_config(gpio43, &gpio43_param);
+		if (rc) {
+			pr_err("gpio_config 43 failed (3), rc=%d\n", rc);
+			return -EINVAL;
+		}
+		rc = gpio_request(LCD_EN, "LCD_EN");
+		if (rc) {
+			pr_err("request gpio LCD_EN failed, rc=%d\n",
+					rc);
+			gpio_free(LCD_EN);
+			return -ENODEV;
+		}
+
+		gpio_tlmm_config(GPIO_CFG(LCD_EN,  0, GPIO_CFG_OUTPUT,
+					GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
+				GPIO_CFG_ENABLE);
+
+	    rc = gpio_request(MSM_GPIO_BL_I2C_SDA,
+		"MSM_GPIO_BACKLIGHT_I2C_SDA");
+		if (rc) {
+			pr_err("request gpio MSM_GPIO_BL_I2C_SDA failed, rc=%d\n",
+					rc);
+			gpio_free(MSM_GPIO_BL_I2C_SDA);
+			return -ENODEV;
+		}
+		  rc = gpio_request(MSM_GPIO_BL_I2C_SCL,
+		  "MSM_GPIO_BACKLIGHT_I2C_SCL");
+		if (rc) {
+			pr_err("request gpio MSM_GPIO_BL_I2C_SCL failed, rc=%d\n",
+					rc);
+			gpio_free(MSM_GPIO_BL_I2C_SCL);
+			return -ENODEV;
+		}
+		msleep(20);
+		gpio_set_value(MSM_GPIO_BL_I2C_SDA, 0);
+		msleep(20);
+		gpio_set_value(MSM_GPIO_BL_I2C_SCL, 0);
+		msleep(20);
+		gpio_set_value(LCD_EN, 1);
+		msleep(20);
+		
+#ifdef CONFIG_SAMSUNG_CMC624
+		if (samsung_has_cmc624()) {
+			struct pm_gpio cmc_gpio_param = {
+				.direction = PM_GPIO_DIR_OUT,
+				.output_buffer = PM_GPIO_OUT_BUF_CMOS,
+				.output_value = 0,
+				.pull = PM_GPIO_PULL_NO,
+				.vin_sel = 2,
+				.out_strength = PM_GPIO_STRENGTH_HIGH,
+				.function = PM_GPIO_FUNC_NORMAL,
+				.inv_int_pol = 0,
+				.disable_pin = 0,
+			};
+			gpio_tlmm_config(GPIO_CFG(GPIO_IMA_I2C_SDA, 0,
+			GPIO_CFG_INPUT,
+			GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_DISABLE);
+			gpio_tlmm_config(GPIO_CFG(GPIO_IMA_I2C_SCL, 0,
+			GPIO_CFG_INPUT,
+			GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_DISABLE);
+
+			pm8xxx_gpio_config(IMA_PWR_EN, &cmc_gpio_param);
+			pm8xxx_gpio_config(IMA_nRST, &cmc_gpio_param);
+			pm8xxx_gpio_config(IMA_SLEEP, &cmc_gpio_param);
+			pm8xxx_gpio_config(IMA_CMC_EN, &cmc_gpio_param);
+			rc = gpio_request(IMA_PWR_EN, "IMA_PWR_EN");
+			if (rc) {
+				pr_err("request IMA_PWR_EN failed, rc=%d\n",
+				rc);
+				return -ENODEV;
+			}
+			rc = gpio_request(IMA_nRST, "IMA_nRST");
+			if (rc) {
+				pr_err("request IMA_nRST failed, rc=%d\n",
+				rc);
+				return -ENODEV;
+			}
+			rc = gpio_request(IMA_SLEEP, "IMA_SLEEP");
+			if (rc) {
+				pr_err("request IMA_SLEEP failed, rc=%d\n", rc);
+				return -ENODEV;
+			}
+			rc = gpio_request(IMA_CMC_EN, "IMA_CMC_EN");
+			if (rc) {
+				pr_err("request IMA_CMC_EN failed, rc=%d\n",
+				rc);
+				return -ENODEV;
+			}
+	
+			pr_info("All CMC GPIOs configured\n");
+			cmc_power(on);
+			mdelay(25);
+			active_reset_ldi();
+			mdelay(5);
+			samsung_cmc624_on(1);
+		} else{
+			active_reset_ldi();
+		}
+#else
+		active_reset_ldi();
+#endif
+		dsi_power_on = true;
+
+		return 0;
+	}
+	if (on) {
+
+#ifdef CONFIG_SAMSUNG_CMC624/*change CMC gpio cfg*/
+		mipi_pmic_gpios_pmconfig(0);
+#endif		
+		rc = regulator_set_optimum_mode(reg_l2, 100000);
+		if (rc < 0) {
+			pr_err("set_optimum_mode l2 failed, rc=%d\n", rc);
+			return -EINVAL;
+		}
+		rc = regulator_enable(reg_l2);
+		if (rc) {
+			pr_err("enable l2 failed, rc=%d\n", rc);
+			return -ENODEV;
+		}
+		
+		msleep(20);
+		gpio_set_value(LCD_EN, 1);
+
+ #ifdef CONFIG_SAMSUNG_CMC624
+ /* Enable CMC Chip */
+		if (samsung_has_cmc624())
+			cmc_power(on);
+ #endif
+	
+		/* Wait 25ms */
+		msleep(25);
+	
+			/* Active Reset */
+#ifdef CONFIG_SAMSUNG_CMC624
+		if (samsung_has_cmc624()) {
+			active_reset_ldi();
+			mdelay(5);
+			samsung_cmc624_on(1);
+		} else {
+			active_reset_ldi();
+		}
+#else
+		active_reset_ldi();
+#endif
+	} else {
+#ifdef CONFIG_SAMSUNG_CMC624
+		if (samsung_has_cmc624()) {
+			samsung_cmc624_on(0);
+			cmc_power(0);
+		}
+		mipi_pmic_gpios_pmconfig(1);/*change CMC gpio cfg*/
+#endif
+		msleep(5);
+		pr_debug("%s: LCD_EN_GPIO low\n", __func__);
+		gpio_set_value(LCD_EN, 0);
+		msleep(5);	
+		gpio_set_value_cansleep(gpio43, 0);
+		msleep(5);
+		rc = regulator_disable(reg_l2);
+		if (rc) {
+			pr_err("disable l2 failed, rc=%d\n", rc);
+			return -ENODEV;
+		}
+		rc = regulator_set_optimum_mode(reg_l2, 100);
+		if (rc < 0) {
+			pr_err("set_optimum_mode l2 failed, rc=%d\n", rc);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+#endif
 static int mipi_dsi_cdp_panel_power(int on)
 {
 	static struct regulator *reg_l8, *reg_l2;
@@ -929,12 +1197,11 @@ static int mipi_dsi_cdp_panel_power(int on)
 #endif
 	gpio43 = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_LCD_RST);
 	if (!dsi_power_on) {
-
 		reg_l8 = regulator_get(&msm_mipi_dsi1_device.dev,
 				"dsi_vdc");
 		if (IS_ERR(reg_l8)) {
 			pr_err("could not get 8921_l8, rc = %ld\n",
-					PTR_ERR(reg_l8));
+				PTR_ERR(reg_l8));
 			return -ENODEV;
 		}
 #if defined(CONFIG_MACH_JAGUAR) \
@@ -946,7 +1213,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 				"dsi_vddio");
 		if (IS_ERR(reg_l23)) {
 			pr_err("could not get 8921_l23, rc = %ld\n",
-					PTR_ERR(reg_l23));
+				PTR_ERR(reg_l23));
 			return -ENODEV;
 		}
 #else
@@ -956,8 +1223,8 @@ static int mipi_dsi_cdp_panel_power(int on)
 	&& !defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
-
+	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) \
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 		rc = gpio_request(GPIO_LCD_22V_EN, "lcd_22v_en");
 #endif
 		if (rc) {
@@ -972,7 +1239,8 @@ static int mipi_dsi_cdp_panel_power(int on)
 	&& !defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL)\
 	&& !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
+	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) \
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 		gpio_tlmm_config(GPIO_CFG(GPIO_LCD_22V_EN,  0, GPIO_CFG_OUTPUT,
 					GPIO_CFG_NO_PULL, GPIO_CFG_2MA),
 				GPIO_CFG_ENABLE);
@@ -982,7 +1250,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 				"dsi_vdda");
 		if (IS_ERR(reg_l2)) {
 			pr_err("could not get 8921_l2, rc = %ld\n",
-					PTR_ERR(reg_l2));
+				PTR_ERR(reg_l2));
 			return -ENODEV;
 		}
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
@@ -1057,7 +1325,6 @@ static int mipi_dsi_cdp_panel_power(int on)
 			pr_err("gpio_config 43 failed (3), rc=%d\n", rc);
 			return -EINVAL;
 		}
-
 #if defined(CONFIG_MACH_JAGUAR) \
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL) \
 	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT_PANEL) \
@@ -1075,16 +1342,19 @@ static int mipi_dsi_cdp_panel_power(int on)
 	&& !defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
+	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) \
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 		gpio_direction_output(GPIO_LCD_22V_EN, 1);
 #endif
 #endif
+#if !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 		msleep(20);
 		rc = regulator_enable(reg_l8);
 		if (rc) {
 			pr_err("enable l8 failed, rc=%d\n", rc);
 			return -ENODEV;
 		}
+#endif
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT) \
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_CMD_QHD_PT)\
 	|| defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT)\
@@ -1099,8 +1369,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT) \
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL) \
 	|| defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	|| defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
-
+	|| defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) 
 		udelay(10);
 		active_reset_ldi();
 #endif
@@ -1126,8 +1395,9 @@ static int mipi_dsi_cdp_panel_power(int on)
 			gpio_tlmm_config(GPIO_CFG(GPIO_IMA_I2C_SCL, 0,
 			GPIO_CFG_INPUT,
 			GPIO_CFG_NO_PULL, GPIO_CFG_2MA), GPIO_CFG_DISABLE);
-
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 			pm8xxx_gpio_config(MLCD_ON, &cmc_gpio_param);
+#endif
 			pm8xxx_gpio_config(IMA_PWR_EN, &cmc_gpio_param);
 			pm8xxx_gpio_config(IMA_nRST, &cmc_gpio_param);
 			pm8xxx_gpio_config(IMA_SLEEP, &cmc_gpio_param);
@@ -1155,11 +1425,13 @@ static int mipi_dsi_cdp_panel_power(int on)
 				rc);
 				return -ENODEV;
 			}
+#ifndef CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL
 			rc = gpio_request(MLCD_ON, "IMA_CMC_EN");
 			if (rc) {
 				pr_err("request MLCD_ON failed, rc=%d\n", rc);
 				return -ENODEV;
 			}
+#endif			
 			pr_info("All CMC GPIOs configured\n");
 			cmc_power(on);
 			mdelay(25);
@@ -1169,7 +1441,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 		} else {
 			gpio_direction_output(gpio43, 1);
 		}
-#else
+#else 
 		gpio_direction_output(gpio43, 1);
 #endif
 		dsi_power_on = true;
@@ -1229,14 +1501,14 @@ static int mipi_dsi_cdp_panel_power(int on)
 	&& !defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
-
+	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) \
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 		gpio_direction_output(GPIO_LCD_22V_EN, 1);
 #endif
 #endif
 
 #if !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL)\
-		&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT)
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT)
 		udelay(500);
 #endif
 		rc = regulator_enable(reg_l8);
@@ -1244,6 +1516,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 			pr_err("enable l8 failed, rc=%d\n", rc);
 			return -ENODEV;
 		}
+
  #ifdef CONFIG_SAMSUNG_CMC624
  /* Enable CMC Chip */
 		if (samsung_has_cmc624())
@@ -1278,7 +1551,6 @@ static int mipi_dsi_cdp_panel_power(int on)
 		}
 		mipi_pmic_gpios_pmconfig(1);/*change CMC gpio cfg*/
 #endif
-
 #if !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT)
 		gpio_set_value_cansleep(gpio43, 0);
 #endif
@@ -1289,13 +1561,11 @@ static int mipi_dsi_cdp_panel_power(int on)
 
 		msleep(120);
 #endif
-
 		rc = regulator_disable(reg_l8);
 		if (rc) {
 			pr_err("disable l8 failed, rc=%d\n", rc);
 			return -ENODEV;
 		}
-
 #if defined(CONFIG_MACH_JAGUAR) \
 	|| defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL) \
 	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT_PANEL) \
@@ -1314,8 +1584,9 @@ static int mipi_dsi_cdp_panel_power(int on)
 	&& !defined(CONFIG_FB_MSM_MIPI_BOEOT_TFT_VIDEO_WSVGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL) \
 	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_QHD_PT) \
-	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
-
+	&& !defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT) \
+	&& !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+	
 		gpio_direction_output(GPIO_LCD_22V_EN, 0);
 #endif
 #endif
@@ -1324,7 +1595,6 @@ static int mipi_dsi_cdp_panel_power(int on)
 			pr_err("disable l2 failed, rc=%d\n", rc);
 			return -ENODEV;
 		}
-
 		rc = regulator_set_optimum_mode(reg_l8, 100);
 		if (rc < 0) {
 			pr_err("set_optimum_mode l8 failed, rc=%d\n", rc);
@@ -1373,97 +1643,28 @@ static int mipi_dsi_panel_power(int on)
 			|| machine_is_ESPRESSO10_ATT())
 		ret = mipi_dsi_espresso_dsi_power(on);
 #endif
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+	else if(machine_is_KONA())
+		ret=mipi_dsi_cdp_panel_power_kona(on);
+#endif	
 	else
 		ret = mipi_dsi_cdp_panel_power(on);
-
 	return ret;
 }
 
 static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.vsync_gpio = MDP_VSYNC_GPIO,
 	.dsi_power_save = mipi_dsi_panel_power,
+#if !defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
 #ifdef CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11
 	.dsi_client_power_save = mipi_dsi_espresso_panel_power,
 	.dsi_client_reset = mipi_dsi_tc35reset_release,
 #endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
 	.lcd_rst_up = pull_ldi_reset_up,
 	.lcd_rst_down = pull_ldi_reset_down,
+#endif
 };
 #ifdef CONFIG_MSM_BUS_SCALING
-
-static struct msm_bus_vectors rotator_init_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-	},
-};
-
-static struct msm_bus_vectors rotator_ui_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1024 * 600 * 4 * 2 * 60),
-		.ib  = (1024 * 600 * 4 * 2 * 60 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_vga_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-};
-static struct msm_bus_vectors rotator_720p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_1080p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_paths rotator_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(rotator_init_vectors),
-		rotator_init_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_ui_vectors),
-		rotator_ui_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_vga_vectors),
-		rotator_vga_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_720p_vectors),
-		rotator_720p_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_1080p_vectors),
-		rotator_1080p_vectors,
-	},
-};
-
-struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
-	rotator_bus_scale_usecases,
-	ARRAY_SIZE(rotator_bus_scale_usecases),
-	.name = "rotator",
-};
-
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
@@ -1473,43 +1674,6 @@ static struct msm_bus_vectors mdp_init_vectors[] = {
 	},
 };
 
-#ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
-static struct msm_bus_vectors hdmi_as_primary_vectors[] = {
-	/* If HDMI is used as primary */
-	{
-		.src = MSM_BUS_MASTER_MDP_PORT0,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 2000000000,
-		.ib = 2000000000,
-	},
-};
-static struct msm_bus_paths mdp_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(mdp_init_vectors),
-		mdp_init_vectors,
-	},
-	{
-		ARRAY_SIZE(hdmi_as_primary_vectors),
-		hdmi_as_primary_vectors,
-	},
-	{
-		ARRAY_SIZE(hdmi_as_primary_vectors),
-		hdmi_as_primary_vectors,
-	},
-	{
-		ARRAY_SIZE(hdmi_as_primary_vectors),
-		hdmi_as_primary_vectors,
-	},
-	{
-		ARRAY_SIZE(hdmi_as_primary_vectors),
-		hdmi_as_primary_vectors,
-	},
-	{
-		ARRAY_SIZE(hdmi_as_primary_vectors),
-		hdmi_as_primary_vectors,
-	},
-};
-#else
 static struct msm_bus_vectors mdp_ui_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
@@ -1575,7 +1739,6 @@ static struct msm_bus_paths mdp_bus_scale_usecases[] = {
 		mdp_1080p_vectors,
 	},
 };
-#endif
 
 static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
 	mdp_bus_scale_usecases,
@@ -1585,23 +1748,9 @@ static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
 
 #endif
 
-static int mdp_core_clk_rate_table[] = {
-	85330000,	/*default*/
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
-	160000000,	/*vga*/
-	200000000,	/*720p*/
-#else
-	85330000,	/*vga*/
-	160000000,	/*720p*/
-#endif
-	200000000,	/*1080p*/
-};
-
 static struct msm_panel_common_pdata mdp_pdata = {
 	.gpio = MDP_VSYNC_GPIO,
-	.mdp_core_clk_rate = 85330000,
-	.mdp_core_clk_table = mdp_core_clk_rate_table,
-	.num_mdp_clk = ARRAY_SIZE(mdp_core_clk_rate_table),
+	.mdp_max_clk = 200000000,
 #ifdef CONFIG_MSM_BUS_SCALING
 	.mdp_bus_scale_table = &mdp_bus_scale_pdata,
 #endif
@@ -1613,32 +1762,6 @@ static struct msm_panel_common_pdata mdp_pdata = {
 #endif
 	.cont_splash_enabled = 0x0,
 };
-
-#ifndef CONFIG_FB_MSM_MIPI_PANEL_DETECT
-/**
- * Set MDP clocks to high frequency to avoid DSI underflow
- * when using high resolution 1200x1920 WUXGA panels
- */
-static void set_mdp_clocks_for_wuxga(void)
-{
-	int i;
-
-	mdp_ui_vectors[0].ab = 2000000000;
-	mdp_ui_vectors[0].ib = 2000000000;
-	mdp_vga_vectors[0].ab = 2000000000;
-	mdp_vga_vectors[0].ib = 2000000000;
-	mdp_720p_vectors[0].ab = 2000000000;
-	mdp_720p_vectors[0].ib = 2000000000;
-	mdp_1080p_vectors[0].ab = 2000000000;
-	mdp_1080p_vectors[0].ib = 2000000000;
-
-	mdp_pdata.mdp_core_clk_rate = 200000000;
-
-	for (i = 0; i < ARRAY_SIZE(mdp_core_clk_rate_table); i++)
-		mdp_core_clk_rate_table[i] = 200000000;
-
-}
-#endif
 
 void __init msm8960_mdp_writeback(struct memtype_reserve* reserve_table)
 {
@@ -1652,6 +1775,13 @@ void __init msm8960_mdp_writeback(struct memtype_reserve* reserve_table)
 #endif
 }
 
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+static struct platform_device mipi_dsi_novatek_nt71391_panel_device = {
+	.name = "mipi_novatek_nt71391",
+	.id = 0,
+	.dev.platform_data = &mipi_dsi_pdata,
+};
+#endif
 static struct platform_device mipi_dsi_renesas_panel_device = {
 	.name = "mipi_renesas",
 	.id = 0,
@@ -1689,11 +1819,13 @@ static int dsi2lvds_gpio[2] = {
 #else
 	0,/* Backlight PWM-ID=0 for PMIC-GPIO#24 */
 	0x1F08 /* DSI2LVDS Bridge GPIO Output, mask=0x1f, out=0x08 */
+
 #endif
 	};
 
 static struct msm_panel_common_pdata mipi_dsi2lvds_pdata = {
 	.gpio_num = dsi2lvds_gpio,
+	.cont_splash_enabled = 0x0,
 };
 
 static struct mipi_dsi_phy_ctrl dsi_novatek_cmd_mode_phy_db = {
@@ -1736,6 +1868,11 @@ static struct platform_device mipi_dsi_samsung_oled_panel_device = {
 	.dev.platform_data = &mipi_dsi_pdata,
 };
 
+static struct platform_device mipi_dsi_orise_panel_device = {
+	.name = "mipi_orise",
+	.id = 0,
+};
+
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static struct resource hdmi_msm_resources[] = {
 	{
@@ -1761,12 +1898,16 @@ static struct resource hdmi_msm_resources[] = {
 static int hdmi_enable_5v(int on);
 static int hdmi_core_power(int on, int show);
 static int hdmi_cec_power(int on);
+static int hdmi_gpio_config(int on);
+static int hdmi_panel_power(int on);
 
 static struct msm_hdmi_platform_data hdmi_msm_data = {
 	.irq = HDMI_IRQ,
 	.enable_5v = hdmi_enable_5v,
 	.core_power = hdmi_core_power,
 	.cec_power = hdmi_cec_power,
+	.panel_power = hdmi_panel_power,
+	.gpio_config = hdmi_gpio_config,
 };
 
 static struct platform_device hdmi_msm_device = {
@@ -1825,10 +1966,25 @@ static struct msm_bus_scale_pdata dtv_bus_scale_pdata = {
 	ARRAY_SIZE(dtv_bus_scale_usecases),
 	.name = "dtv",
 };
-
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static struct lcdc_platform_data dtv_pdata = {
 	.bus_scale_table = &dtv_bus_scale_pdata,
+	.lcdc_power_save = hdmi_panel_power,
 };
+
+static int hdmi_panel_power(int on)
+{
+	int rc;
+
+	pr_debug("%s: HDMI Core: %s\n", __func__, (on ? "ON" : "OFF"));
+	rc = hdmi_core_power(on, 1);
+	if (rc)
+		rc = hdmi_cec_power(on);
+
+	pr_debug("%s: HDMI Core: %s Success\n", __func__, (on ? "ON" : "OFF"));
+	return rc;
+}
+#endif
 #endif
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
@@ -1842,9 +1998,16 @@ static int hdmi_enable_5v(int on)
 	if (on == prev_on)
 		return 0;
 
-	if (!reg_8921_hdmi_mvs)
+	if (!reg_8921_hdmi_mvs) {
 		reg_8921_hdmi_mvs = regulator_get(&hdmi_msm_device.dev,
 			"hdmi_mvs");
+		if (IS_ERR(reg_8921_hdmi_mvs)) {
+			pr_err("'%s' regulator not found, rc=%ld\n",
+				"hdmi_mvs", IS_ERR(reg_8921_hdmi_mvs));
+			reg_8921_hdmi_mvs = NULL;
+			return -ENODEV;
+		}
+	}
 
 	if (on) {
 		rc = regulator_enable(reg_8921_hdmi_mvs);
@@ -1922,30 +2085,8 @@ static int hdmi_core_power(int on, int show)
 				"hdmi_vcc", rc);
 			return rc;
 		}
-		rc = gpio_request(100, "HDMI_DDC_CLK");
-		if (rc) {
-			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
-				"HDMI_DDC_CLK", 100, rc);
-			goto error1;
-		}
-		rc = gpio_request(101, "HDMI_DDC_DATA");
-		if (rc) {
-			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
-				"HDMI_DDC_DATA", 101, rc);
-			goto error2;
-		}
-		rc = gpio_request(102, "HDMI_HPD");
-		if (rc) {
-			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
-				"HDMI_HPD", 102, rc);
-			goto error3;
-		}
 		pr_debug("%s(on): success\n", __func__);
 	} else {
-		gpio_free(100);
-		gpio_free(101);
-		gpio_free(102);
-
 		rc = regulator_disable(reg_8921_l23);
 		if (rc) {
 			pr_err("disable reg_8921_l23 failed, rc=%d\n", rc);
@@ -1967,14 +2108,50 @@ static int hdmi_core_power(int on, int show)
 	prev_on = on;
 
 	return 0;
+}
 
-error3:
-	gpio_free(101);
+static int hdmi_gpio_config(int on)
+{
+	int rc = 0;
+	static int prev_on;
+
+	if (on == prev_on)
+		return 0;
+
+	if (on) {
+		rc = gpio_request(100, "HDMI_DDC_CLK");
+		if (rc) {
+			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
+				"HDMI_DDC_CLK", 100, rc);
+			return rc;
+		}
+		rc = gpio_request(101, "HDMI_DDC_DATA");
+		if (rc) {
+			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
+				"HDMI_DDC_DATA", 101, rc);
+			goto error1;
+		}
+		rc = gpio_request(102, "HDMI_HPD");
+		if (rc) {
+			pr_err("'%s'(%d) gpio_request failed, rc=%d\n",
+				"HDMI_HPD", 102, rc);
+			goto error2;
+		}
+		pr_debug("%s(on): success\n", __func__);
+	} else {
+		gpio_free(100);
+		gpio_free(101);
+		gpio_free(102);
+		pr_debug("%s(off): success\n", __func__);
+	}
+
+	prev_on = on;
+	return 0;
+
 error2:
-	gpio_free(100);
+	gpio_free(101);
 error1:
-	regulator_disable(reg_8921_l23);
-	regulator_disable(reg_8921_s4);
+	gpio_free(100);
 	return rc;
 }
 
@@ -2018,7 +2195,6 @@ void __init msm8960_init_fb(void)
 	}
 #endif
 	platform_device_register(&msm_fb_device);
-
 #ifdef CONFIG_FB_MSM_WRITEBACK_MSM_PANEL
 	platform_device_register(&wfd_panel_device);
 	platform_device_register(&wfd_device);
@@ -2032,6 +2208,10 @@ void __init msm8960_init_fb(void)
 
 	if (!machine_is_msm8960_sim() && !machine_is_msm8960_rumi3()) {
 		platform_device_register(&mipi_dsi_novatek_panel_device);
+		platform_device_register(&mipi_dsi_orise_panel_device);
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_WXGA_PT_PANEL)
+		platform_device_register(&mipi_dsi_novatek_nt71391_panel_device);
+#endif
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 		platform_device_register(&hdmi_msm_device);
@@ -2085,7 +2265,9 @@ void __init msm8960_init_fb(void)
 
 	msm_fb_register_device("mipi_dsi", &mipi_dsi_pdata);
 #ifdef CONFIG_MSM_BUS_SCALING
+#ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 	msm_fb_register_device("dtv", &dtv_pdata);
+#endif
 #endif
 }
 
@@ -2102,13 +2284,43 @@ void __init msm8960_allocate_fb_region(void)
 			size, addr, __pa(addr));
 }
 
+/**
+ * Set MDP clocks to high frequency to avoid DSI underflow
+ * when using high resolution 1200x1920 WUXGA panels
+ */
+static void set_mdp_clocks_for_wuxga(void)
+{
+	mdp_ui_vectors[0].ab = 2000000000;
+	mdp_ui_vectors[0].ib = 2000000000;
+	mdp_vga_vectors[0].ab = 2000000000;
+	mdp_vga_vectors[0].ib = 2000000000;
+	mdp_720p_vectors[0].ab = 2000000000;
+	mdp_720p_vectors[0].ib = 2000000000;
+	mdp_1080p_vectors[0].ab = 2000000000;
+	mdp_1080p_vectors[0].ib = 2000000000;
+
+	if (hdmi_is_primary) {
+		dtv_bus_def_vectors[0].ab = 2000000000;
+		dtv_bus_def_vectors[0].ib = 2000000000;
+	}
+}
+
 void __init msm8960_set_display_params(char *prim_panel, char *ext_panel)
 {
+	int disable_splash = 0;
 	if (strnlen(prim_panel, PANEL_NAME_MAX_LEN)) {
 		strlcpy(msm_fb_pdata.prim_panel_name, prim_panel,
 			PANEL_NAME_MAX_LEN);
 		pr_debug("msm_fb_pdata.prim_panel_name %s\n",
 			msm_fb_pdata.prim_panel_name);
+
+		if (strncmp((char *)msm_fb_pdata.prim_panel_name,
+			MIPI_VIDEO_TOSHIBA_WSVGA_PANEL_NAME,
+			strnlen(MIPI_VIDEO_TOSHIBA_WSVGA_PANEL_NAME,
+				PANEL_NAME_MAX_LEN))) {
+			/* Disable splash for panels other than Toshiba WSVGA */
+			disable_splash = 1;
+		}
 
 		if (!strncmp((char *)msm_fb_pdata.prim_panel_name,
 			HDMI_PANEL_NAME, strnlen(HDMI_PANEL_NAME,
@@ -2116,6 +2328,13 @@ void __init msm8960_set_display_params(char *prim_panel, char *ext_panel)
 			pr_debug("HDMI is the primary display by"
 				" boot parameter\n");
 			hdmi_is_primary = 1;
+			set_mdp_clocks_for_wuxga();
+		}
+		if (!strncmp((char *)msm_fb_pdata.prim_panel_name,
+				MIPI_VIDEO_TOSHIBA_WUXGA_PANEL_NAME,
+				strnlen(MIPI_VIDEO_TOSHIBA_WUXGA_PANEL_NAME,
+					PANEL_NAME_MAX_LEN))) {
+			set_mdp_clocks_for_wuxga();
 		}
 	}
 	if (strnlen(ext_panel, PANEL_NAME_MAX_LEN)) {
@@ -2124,4 +2343,7 @@ void __init msm8960_set_display_params(char *prim_panel, char *ext_panel)
 		pr_debug("msm_fb_pdata.ext_panel_name %s\n",
 			msm_fb_pdata.ext_panel_name);
 	}
+
+	if (disable_splash)
+		mdp_pdata.cont_splash_enabled = 0;
 }

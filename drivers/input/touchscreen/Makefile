@@ -75,3 +75,4 @@ obj-$(CONFIG_TOUCHSCREEN_MMS136_TABLET)	+= mms_ts_136_tablet.o
 obj-$(CONFIG_TOUCHSCREEN_MXT224)	+= mxt224e.o
 obj-$(CONFIG_TOUCHSCREEN_MXT224S)        += mxt224s.o
 obj-$(CONFIG_TOUCHSCREEN_SYNAPTICS_S7301)	+= synaptics_s7301.o synaptics_fw_updater.o
+obj-$(CONFIG_WACOM_W9001)        += wacom_i2c.o wacom_i2c_flash.o
