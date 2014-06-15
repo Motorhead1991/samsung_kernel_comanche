@@ -113,10 +113,7 @@ static int riva_shutdown(const struct subsys_data *subsys)
 {
 	pil_force_shutdown("wcnss");
 	flush_delayed_work(&cancel_vote_work);
-<<<<<<< HEAD
 	wcnss_flush_delayed_boot_votes();
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 	disable_irq_nosync(RIVA_APSS_WDOG_BITE_RESET_RDY_IRQ);
 
 	return 0;

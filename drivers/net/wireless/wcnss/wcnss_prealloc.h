@@ -16,8 +16,4 @@
 int wcnss_prealloc_init(void);
 void wcnss_prealloc_deinit(void);
 
-<<<<<<< HEAD
 #endif/* _WCNSS_PRE_ALLOC_H_ */
-=======
-#endif/* _WCNSS_PRE_ALLOC_H_ */
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel

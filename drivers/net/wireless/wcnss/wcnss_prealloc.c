@@ -13,7 +13,6 @@
 #include <linux/slab.h>
 #include <linux/err.h>
 #include <linux/wcnss_wlan.h>
-<<<<<<< HEAD
  
 static DEFINE_MUTEX(alloc_lock);
  
@@ -21,20 +20,10 @@ struct wcnss_prealloc {
         int occupied;
         unsigned int size;
         void *ptr;
-=======
-
-static DEFINE_MUTEX(alloc_lock);
-
-struct wcnss_prealloc {
-	int occupied;
-	unsigned int size;
-	void *ptr;
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 };
 
 /* pre-alloced mem for WLAN driver */
 static struct wcnss_prealloc wcnss_allocs[] = {
-<<<<<<< HEAD
         {0, 8  * 1024, NULL},
         {0, 8  * 1024, NULL},
         {0, 8  * 1024, NULL},
@@ -48,26 +37,10 @@ static struct wcnss_prealloc wcnss_allocs[] = {
         {0, 32 * 1024, NULL},
         {0, 64 * 1024, NULL},
         {0, 64 * 1024, NULL},
-=======
-	{0, 8  * 1024, NULL},
-	{0, 8  * 1024, NULL},
-	{0, 8  * 1024, NULL},
-	{0, 8  * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 32 * 1024, NULL},
-	{0, 64 * 1024, NULL},
-	{0, 64 * 1024, NULL},
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 };
 
 int wcnss_prealloc_init(void)
 {
-<<<<<<< HEAD
         int i;
  
         for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
@@ -108,54 +81,11 @@ void *wcnss_prealloc_get(unsigned int size)
         mutex_unlock(&alloc_lock);
 
         return NULL;
-=======
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
-		wcnss_allocs[i].occupied = 0;
-		wcnss_allocs[i].ptr = kmalloc(wcnss_allocs[i].size, GFP_KERNEL);
-		if (wcnss_allocs[i].ptr == NULL)
-			return -ENOMEM;
-	}
-
-	return 0;
-}
-
-void wcnss_prealloc_deinit(void)
-{
-	int i = 0;
-
-	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++)
-		kfree(wcnss_allocs[i].ptr);
-}
-
-void *wcnss_prealloc_get(unsigned int size)
-{
-	int i = 0;
-
-	mutex_lock(&alloc_lock);
-	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
-		if (wcnss_allocs[i].occupied)
-			continue;
-
-		if (wcnss_allocs[i].size > size) {
-			/* we found the slot */
-			wcnss_allocs[i].occupied = 1;
-			mutex_unlock(&alloc_lock);
-			return wcnss_allocs[i].ptr;
-		}
-	}
-	pr_err("wcnss: %s: prealloc not available\n", __func__);
-	mutex_unlock(&alloc_lock);
-
-	return NULL;
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 }
 EXPORT_SYMBOL(wcnss_prealloc_get);
 
 int wcnss_prealloc_put(void *ptr)
 {
-<<<<<<< HEAD
         int i = 0;
 
         mutex_lock(&alloc_lock);
@@ -171,20 +101,3 @@ int wcnss_prealloc_put(void *ptr)
         return 0;
 }
 EXPORT_SYMBOL(wcnss_prealloc_put);
-=======
-	int i = 0;
-
-	mutex_lock(&alloc_lock);
-	for (i = 0; i < ARRAY_SIZE(wcnss_allocs); i++) {
-		if (wcnss_allocs[i].ptr == ptr) {
-			wcnss_allocs[i].occupied = 0;
-			mutex_unlock(&alloc_lock);
-			return 1;
-		}
-	}
-	mutex_unlock(&alloc_lock);
-
-	return 0;
-}
-EXPORT_SYMBOL(wcnss_prealloc_put);
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel

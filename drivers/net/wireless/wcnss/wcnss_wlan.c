@@ -24,12 +24,9 @@
 #include <linux/wakelock.h>
 #include <linux/delay.h>
 #include <mach/peripheral-loader.h>
-<<<<<<< HEAD
 #include <mach/msm_smd.h>
 #include <mach/msm_iomap.h>
 #include <asm/io.h>
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
 #include "wcnss_prealloc.h"
 #endif
@@ -119,10 +116,6 @@ static ssize_t wcnss_serial_number_store(struct device *dev,
 static DEVICE_ATTR(serial_number, S_IRUSR | S_IWUSR,
 	wcnss_serial_number_show, wcnss_serial_number_store);
 
-<<<<<<< HEAD
-=======
-
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 static ssize_t wcnss_thermal_mitigation_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
 {
@@ -133,11 +126,7 @@ static ssize_t wcnss_thermal_mitigation_show(struct device *dev,
 }
 
 static ssize_t wcnss_thermal_mitigation_store(struct device *dev,
-<<<<<<< HEAD
-		struct device_attribute *attr, const char *buf, size_t count)
-=======
 		struct device_attribute *attr, const char * buf, size_t count)
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 {
 	int value;
 
@@ -154,8 +143,6 @@ static ssize_t wcnss_thermal_mitigation_store(struct device *dev,
 
 static DEVICE_ATTR(thermal_mitigation, S_IRUSR | S_IWUSR,
 	wcnss_thermal_mitigation_show, wcnss_thermal_mitigation_store);
-
-<<<<<<< HEAD
 
 static ssize_t wcnss_version_show(struct device *dev,
 				struct device_attribute *attr, char *buf)
@@ -181,8 +168,6 @@ void wcnss_reset_intr(void)
 }
 EXPORT_SYMBOL(wcnss_reset_intr);
 
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 static int wcnss_create_sysfs(struct device *dev)
 {
 	int ret;
@@ -195,7 +180,7 @@ static int wcnss_create_sysfs(struct device *dev)
 		return ret;
 
 	ret = device_create_file(dev, &dev_attr_thermal_mitigation);
-<<<<<<< HEAD
+
 	if (ret)
 		goto remove_serial;
 
@@ -211,13 +196,13 @@ remove_serial:
 	device_remove_file(dev, &dev_attr_serial_number);
 
 	return ret;
-=======
+
 	if (ret) {
 		device_remove_file(dev, &dev_attr_serial_number);
 		return ret;
 	}
 	return 0;
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
+
 }
 
 static void wcnss_remove_sysfs(struct device *dev)
@@ -225,7 +210,6 @@ static void wcnss_remove_sysfs(struct device *dev)
 	if (dev) {
 		device_remove_file(dev, &dev_attr_serial_number);
 		device_remove_file(dev, &dev_attr_thermal_mitigation);
-<<<<<<< HEAD
 		device_remove_file(dev, &dev_attr_wcnss_version);
 	}
 }
@@ -259,8 +243,6 @@ static void wcnss_smd_notify_event(void *data, unsigned int event)
 
 	default:
 		break;
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 	}
 }
 
@@ -315,15 +297,12 @@ wcnss_wlan_ctrl_probe(struct platform_device *pdev)
 	return 0;
 }
 
-<<<<<<< HEAD
 void wcnss_flush_delayed_boot_votes()
 {
 	flush_delayed_work_sync(&penv->wcnss_work);
 }
 EXPORT_SYMBOL(wcnss_flush_delayed_boot_votes);
 
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 static int __devexit
 wcnss_wlan_ctrl_remove(struct platform_device *pdev)
 {
@@ -608,10 +587,8 @@ wcnss_trigger_config(struct platform_device *pdev)
 	penv->wlan_config.use_48mhz_xo = has_48mhz_xo;
 
 	penv->thermal_mitigation = 0;
-<<<<<<< HEAD
+
 	strlcpy(penv->wcnss_version, "INVALID", WCNSS_VERSION_LEN);
-=======
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 
 	penv->gpios_5wire = platform_get_resource_byname(pdev, IORESOURCE_IO,
 							"wcnss_gpios_5wire");
@@ -783,32 +760,20 @@ static struct platform_driver wcnss_wlan_driver = {
 
 static int __init wcnss_wlan_init(void)
 {
-<<<<<<< HEAD
+
     int ret = 0;
-=======
-	int ret = 0;
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 
 	platform_driver_register(&wcnss_wlan_driver);
 	platform_driver_register(&wcnss_wlan_ctrl_driver);
 	platform_driver_register(&wcnss_ctrl_driver);
 
 #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
-<<<<<<< HEAD
     ret = wcnss_prealloc_init();
     if (ret < 0)
         pr_err("wcnss: pre-allocation failed\n");
 #endif
 
     return ret;
-=======
-	ret = wcnss_prealloc_init();
-	if (ret < 0)
-		pr_err("wcnss: pre-allocation failed\n");
-#endif
-
-	return ret;
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 }
 
 static void __exit wcnss_wlan_exit(void)
@@ -826,11 +791,7 @@ static void __exit wcnss_wlan_exit(void)
 	platform_driver_unregister(&wcnss_wlan_ctrl_driver);
 	platform_driver_unregister(&wcnss_wlan_driver);
 #ifdef CONFIG_WCNSS_MEM_PRE_ALLOC
-<<<<<<< HEAD
     wcnss_prealloc_deinit();
-=======
-	wcnss_prealloc_deinit();
->>>>>>> f0dd9ee... Prima driver building inline with ics kernel
 #endif
 }
 
