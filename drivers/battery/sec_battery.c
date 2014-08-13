@@ -640,9 +640,11 @@ static bool sec_bat_get_temperature_by_adc(
 temp_by_adc_goto:
 	value->intval = temp;
 
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev,
 		"%s: Temp(%d), Temp-ADC(%d)\n",
 		__func__, temp, temp_adc);
+#endif
 
 	return true;
 }
@@ -682,12 +684,14 @@ static bool sec_bat_temperature(
 			battery->pdata->temp_low_threshold_normal;
 	}
 
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_info(battery->dev,
 		"%s: HT(%d), HR(%d), LT(%d), LR(%d)\n",
 		__func__, battery->temp_high_threshold,
 		battery->temp_high_recovery,
 		battery->temp_low_threshold,
 		battery->temp_low_recovery);
+#endif
 	return ret;
 }
 
@@ -703,8 +707,10 @@ static bool sec_bat_temperature_check(
 	health_changed = true;
 
 	if (battery->status == POWER_SUPPLY_STATUS_DISCHARGING) {
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 		dev_dbg(battery->dev,
 			"%s: Charging Disabled\n", __func__);
+#endif
 		return true;
 	}
 
@@ -1229,18 +1235,20 @@ static bool sec_bat_fullcharged_check(
 {
 	if ((battery->charging_mode == SEC_BATTERY_CHARGING_NONE) ||
 		(battery->status == POWER_SUPPLY_STATUS_NOT_CHARGING)) {
-		dev_dbg(battery->dev,
-			"%s: No Need to Check Full-Charged\n", __func__);
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
+                dev_dbg(battery->dev,
+		"%s: No Need to Check Full-Charged\n", __func__);
+#endif
 		return true;
 	}
 
 	if (sec_bat_check_fullcharged(battery))
 		sec_bat_do_fullcharged(battery);
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_info(battery->dev,
 		"%s: Charging Mode : %s\n", __func__,
 		sec_bat_charging_mode_str[battery->charging_mode]);
-
+#endif
 	return true;
 };
 
@@ -1465,11 +1473,11 @@ static void sec_bat_set_polling(
 	struct sec_battery_info *battery)
 {
 	unsigned int polling_time_temp;
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev, "%s: Start\n", __func__);
-
+#endif
 	polling_time_temp = sec_bat_get_polling_time(battery);
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev,
 		"%s: Status:%s, Sleep:%s, Charging:%s, Short Poll:%s\n",
 		__func__, sec_bat_status_str[battery->status],
@@ -1482,7 +1490,7 @@ static void sec_bat_set_polling(
 		battery->polling_short ?
 		(polling_time_temp * battery->polling_count) :
 		polling_time_temp, battery->polling_time);
-
+#endif
 	/* To sync with log above,
 	 * change polling count after log is displayed
 	 * Do NOT update polling count in initial monitor
@@ -1525,8 +1533,9 @@ static void sec_bat_monitor_work(
 	struct sec_battery_info *battery =
 		container_of(work, struct sec_battery_info,
 		monitor_work);
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev, "%s: Start\n", __func__);
+#endif
 
 	/* monitor once after wakeup */
 	if (battery->polling_in_sleep)
@@ -1565,11 +1574,13 @@ static void sec_bat_monitor_work(
 	sec_bat_fullcharged_check(battery);
 
 continue_monitor:
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_info(battery->dev,
 		"%s: Status(%s), Health(%s), Cable(%d)\n", __func__,
 		sec_bat_status_str[battery->status],
 		sec_bat_health_str[battery->health],
 		battery->cable_type);
+#endif
 
 	power_supply_changed(&battery->psy_bat);
 
@@ -1577,8 +1588,9 @@ continue_monitor:
 
 	wake_unlock(&battery->monitor_wake_lock);
 
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev, "%s: End\n", __func__);
-
+#endif
 	return;
 }
 
@@ -1635,7 +1647,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 	 */
 	battery->polling_in_sleep = false;
 	sec_bat_get_polling_time(battery);
-
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_dbg(battery->dev,
 		"%s: Status:%s, Sleep:%s, Charging:%s, Short Poll:%s\n",
 		__func__, sec_bat_status_str[battery->status],
@@ -1646,7 +1658,7 @@ static void sec_bat_cable_work(struct work_struct *work)
 	dev_dbg(battery->dev,
 		"%s: Polling time is reset to %d sec.\n", __func__,
 		battery->polling_time);
-
+#endif
 	battery->polling_count = 1;	/* initial value = 1 */
 
 	power_supply_changed(&battery->psy_ac);

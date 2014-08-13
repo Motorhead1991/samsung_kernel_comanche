@@ -308,9 +308,11 @@ static bool sec_bat_check_callback(void)
 	}
 
 	pm8921_enable_batt_therm(0);
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	pr_info("%s : battery is %s (%d time%c)\n",
 		__func__, present ? "present" : "absent",
 		i, (i == 1) ? ' ' : 's');
+#endif
 
 	return present ? true : false;
 }

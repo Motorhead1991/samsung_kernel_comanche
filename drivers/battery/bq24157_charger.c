@@ -97,9 +97,10 @@ static int bq24157_get_charging_status(struct i2c_client *client)
 	u8 data = 0;
 
 	bq24157_i2c_read(client, BQ24157_STATUS, &data);
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)
 	dev_info(&client->dev,
 		"%s : charger status(0x%02x)\n", __func__, data);
-
+#endif
 	data = (data & 0x30);
 
 	switch (data) {
@@ -126,9 +127,10 @@ static int bq24157_get_charging_health(struct i2c_client *client)
 	u8 data = 0;
 
 	bq24157_i2c_read(client, BQ24157_STATUS, &data);
-	dev_info(&client->dev,
+#if defined(CONFIG_SEC_DEBUG_FUELGAUGE_LOG)	
+        dev_info(&client->dev,
 		"%s : charger status(0x%02x)\n", __func__, data);
-
+#endif
 	if ((data & 0x30) == 0x30) {	/* check for fault */
 		data = (data & 0x07);
 
