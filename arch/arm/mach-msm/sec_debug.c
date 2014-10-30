@@ -948,7 +948,7 @@ int sec_debug_subsys_add_var_mon(char *name, unsigned int size, unsigned int pa)
 void print_modem_dump_info(void)
 {
 	int i = 0;
-	char modem_exception_info[1024];
+	char modem_exception_info[1016];
 
 	if (!secdbg_subsys)
 		return;
