@@ -194,7 +194,7 @@ SUBARCH := $(shell uname -m | sed -e s/i.86/i386/ -e s/sun4u/sparc64/ \
 ccache := /usr/bin/ccache
 export KBUILD_BUILDHOST := $(SUBARCH)
 ARCH		?= arm
-CROSS_COMPILE	= $(ccache) /home/motorhead/Toolchain/arm-eabi-4.6/bin/arm-eabi-
+CROSS_COMPILE	= $(ccache) /home/motorhead/toolchain/arm-eabi-4.6/bin/arm-eabi-
 
 # Architecture as present in compile.h
 UTS_MACHINE 	:= $(ARCH)
@@ -387,7 +387,7 @@ KERNEL_MODS = $(CFLAGS_A9) $(CFLAGS_MODULO)
 
 KBUILD_CFLAGS   := -O3 -funswitch-loops \
                    -Wundef -Wstrict-prototypes -Wno-trigraphs \
-		   -fno-strict-aliasing -fno-common \
+		   -fstrict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
