@@ -24,6 +24,7 @@
 
 #define CPUFREQ_NAME_LEN 16
 
+#define MSM_CPUFREQ_NO_LIMIT 0xFFFFFFFF
 
 /*********************************************************************
  *                     CPUFREQ NOTIFIER INTERFACE                    *
